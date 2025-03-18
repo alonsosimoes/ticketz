@@ -40,7 +40,7 @@ const useStyles = makeStyles((theme) => ({
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
     borderLeft: "0",
-    [theme.breakpoints.up(1399)]: {
+    [theme.breakpoints.up(1921)]: {
       marginRight: -drawerWidth,
     },
     transition: theme.transitions.create("margin", {
