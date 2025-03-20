@@ -65,7 +65,7 @@ const ListTicketsService = async ({
   let whereCondition: Filterable["where"] = {
     [Op.or]: [{ userId }, { status: "pending" }],
     queueId: {
-      [Op.or]: user.profile === "admin" ? [queueIds, null] : [queueIds]
+      [Op.or]: user.profile === "admin" ? [queueIds, null] : [queueIds, null]
     }
   };
 
@@ -102,7 +102,7 @@ const ListTicketsService = async ({
     }
   ];
 
-  if (showAll === "true" && user.profile === "admin") {
+  if (showAll === "true") {
     whereCondition = {
       queueId: { [Op.or]: [queueIds, null] }
     };
@@ -187,7 +187,7 @@ const ListTicketsService = async ({
       [Op.or]: [{ userId }, { status: "pending" }],
       queueId: {
         [Op.or]:
-          user.profile === "admin" ? [userQueueIds, null] : [userQueueIds]
+          [userQueueIds, null]
       },
       unreadMessages: { [Op.gt]: 0 }
     };
