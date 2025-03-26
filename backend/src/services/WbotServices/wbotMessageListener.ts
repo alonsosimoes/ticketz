@@ -35,7 +35,6 @@ import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketServi
 import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
 import UpdateTicketService from "../TicketServices/UpdateTicketService";
 import formatBody from "../../helpers/Mustache";
-import { Store } from "../../libs/store";
 import TicketTraking from "../../models/TicketTraking";
 import UserRating from "../../models/UserRating";
 import SendWhatsAppMessage from "./SendWhatsAppMessage";
@@ -57,13 +56,9 @@ import CheckSettings, { GetCompanySetting } from "../../helpers/CheckSettings";
 import Whatsapp from "../../models/Whatsapp";
 import { SimpleObjectCache } from "../../helpers/simpleObjectCache";
 import { getPublicPath } from "../../helpers/GetPublicPath";
+import { Session } from "../../libs/wbot";
 
-type Session = WASocket & {
-  id?: number;
-  store?: Store;
-};
-
-interface ImessageUpsert {
+export interface ImessageUpsert {
   messages: proto.IWebMessageInfo[];
   type: MessageUpsertType;
 }
@@ -211,7 +206,7 @@ export const getBodyMessage = (msg: proto.IWebMessageInfo): string | null => {
         msg.message?.locationMessage?.degreesLongitude
       ),
       liveLocationMessage: `Latitude: ${msg.message?.liveLocationMessage?.degreesLatitude} - Longitude: ${msg.message?.liveLocationMessage?.degreesLongitude}`,
-      documentMessage: msg.message?.documentMessage?.title,
+      documentMessage: msg.message?.documentMessage?.caption,
       documentWithCaptionMessage:
         msg.message?.documentWithCaptionMessage?.message?.documentMessage
           ?.caption,
@@ -574,8 +569,9 @@ const saveMediaToFile = async (media, ticket: Ticket): Promise<string> => {
   }
 
   const filePath = getPublicPath();
+  const randomId = makeRandomId(10);
 
-  const relativePath = `media/${ticket.companyId}/${ticket.contactId}/${ticket.id}`;
+  const relativePath = `media/${ticket.companyId}/${ticket.contactId}/${ticket.id}/${randomId}`;
 
   try {
     // create folders inside filepath if not exists
@@ -712,7 +708,7 @@ export const verifyMessage = async (
   };
 
   await ticket.update({
-    lastMessage: body
+    lastMessage: body.substring(0, 255).replace(/\n/g, " ")
   });
 
   const newMessage = await CreateMessageService({

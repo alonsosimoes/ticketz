@@ -22,6 +22,8 @@ const publicFolder = __dirname.endsWith("/dist")
   ? path.resolve(__dirname, "..", "public")
   : path.resolve(__dirname, "..", "..", "..", "public");
 
+const supportedImages = ["image/png", "image/jpg", "image/jpeg", "image/webp"];
+
 const processRecordedAudio = async (audio: string): Promise<Readable> => {
   const outputAudio = `${publicFolder}/${new Date().getTime()}.ogg`;
   return new Promise((resolve, reject) => {
@@ -66,20 +68,14 @@ export const getMessageOptions = async (
         mimetype: needConvert ? "audio/ogg; codecs=opus" : mimetype,
         ptt: needConvert
       };
-    } else if (mimetype.startsWith("document/")) {
+    } else if (supportedImages.includes(mimetype)) {
       options = {
-        document: { stream: fs.createReadStream(pathMedia) },
-        fileName,
-        mimetype
-      };
-    } else if (mimetype.startsWith("application/")) {
-      options = {
-        document: { stream: fs.createReadStream(pathMedia) },
-        mimetype
+        image: { stream: fs.createReadStream(pathMedia) }
       };
     } else {
       options = {
-        image: { stream: fs.createReadStream(pathMedia) }
+        document: { stream: fs.createReadStream(pathMedia) },
+        mimetype
       };
     }
 
@@ -101,9 +97,9 @@ const SendWhatsAppMedia = async ({
 
     const pathMedia = media.path;
 
-    let originalNameUtf8 = "";
+    let fileName = "";
     try {
-      originalNameUtf8 = iconv.decode(
+      fileName = iconv.decode(
         Buffer.from(media.originalname, "binary"),
         "utf8"
       );
@@ -112,7 +108,7 @@ const SendWhatsAppMedia = async ({
     }
 
     const options = await getMessageOptions(
-      originalNameUtf8,
+      fileName,
       pathMedia,
       media.mimetype
     );
@@ -121,9 +117,13 @@ const SendWhatsAppMedia = async ({
       `${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`,
       {
         caption: body || undefined,
+        fileName,
         ...options
       } as AnyMessageContent
     );
+
+    wbot.cacheMessage(sentMessage);
+
     await verifyMediaMessage(sentMessage, ticket, ticket.contact);
     return sentMessage;
   } catch (err) {
