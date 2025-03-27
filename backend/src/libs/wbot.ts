@@ -34,7 +34,6 @@ import Message from "../models/Message";
 
 export type Session = WASocket & {
   id?: number;
-  store?: NodeCache;
   cacheMessage?: (msg: proto.IWebMessageInfo) => void;
 };
 
@@ -146,7 +145,7 @@ export const initWASocket = async (
 
         async function getMessage(
           key: WAMessageKey
-        ): Promise<WAMessageContent | undefined> {
+        ): Promise<WAMessageContent> {
           if (!key.id) return null;
 
           const message = store.get(key.id);
@@ -165,9 +164,22 @@ export const initWASocket = async (
             where: { id: key.id, fromMe: true }
           });
 
-          const data = JSON.parse(msg.dataJson);
+          try {
+            const data = JSON.parse(msg.dataJson);
+            logger.debug(
+              { key, data },
+              "cacheMessage: recovered from database"
+            );
+            store.set(key.id, data.message);
+            return data.message || undefined;
+          } catch (error) {
+            logger.error(
+              { key },
+              `cacheMessage: error parsing message from database - ${error.message}`
+            );
+          }
 
-          return data.message || undefined;
+          return undefined;
         }
 
         const { state, saveState } = await authState(whatsapp);
@@ -246,38 +258,6 @@ export const initWASocket = async (
 
           store.set(msg.key.id, msg.message);
         };
-
-        // wsocket = makeWASocket({
-        //   version,
-        //   logger: loggerBaileys,
-        //   printQRInTerminal: false,
-        //   auth: state as AuthenticationState,
-        //   generateHighQualityLinkPreview: false,
-        //   shouldIgnoreJid: jid => isJidBroadcast(jid),
-        //   browser: ["Chat", "Chrome", "10.15.7"],
-        //   patchMessageBeforeSending: (message) => {
-        //     const requiresPatch = !!(
-        //       message.buttonsMessage ||
-        //       // || message.templateMessage
-        //       message.listMessage
-        //     );
-        //     if (requiresPatch) {
-        //       message = {
-        //         viewOnceMessage: {
-        //           message: {
-        //             messageContextInfo: {
-        //               deviceListMetadataVersion: 2,
-        //               deviceListMetadata: {},
-        //             },
-        //             ...message,
-        //           },
-        //         },
-        //       };
-        //     }
-
-        //     return message;
-        //   },
-        // })
 
         wsocket.ev.on(
           "connection.update",
