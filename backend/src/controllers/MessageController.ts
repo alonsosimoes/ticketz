@@ -43,14 +43,14 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const { companyId, profile } = req.user;
   const queues: number[] = [];
 
-  if (profile !== "admin") {
-    const user = await User.findByPk(req.user.id, {
-      include: [{ model: Queue, as: "queues" }]
-    });
-    user.queues.forEach(queue => {
-      queues.push(queue.id);
-    });
-  }
+  // if (profile !== "admin") {
+  //   const user = await User.findByPk(req.user.id, {
+  //     include: [{ model: Queue, as: "queues" }]
+  //   });
+  //   user.queues.forEach(queue => {
+  //     queues.push(queue.id);
+  //   });
+  // }
 
   const { count, messages, ticket, hasMore } = await ListMessagesService({
     pageNumber,
