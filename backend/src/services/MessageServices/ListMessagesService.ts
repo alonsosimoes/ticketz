@@ -36,35 +36,35 @@ const ListMessagesService = async ({
   const limit = 100;
   const offset = limit * (+pageNumber - 1);
 
-  const options: FindOptions = {
-    where: {
-      ticketId,
-      companyId,
-      mediaType: {
-        [Op.or]: {
-          [Op.ne]: "reactionMessage",
-          [Op.is]: null
-        }
-      }
-    }
-  };
+  // const options: FindOptions = {
+  //   where: {
+  //     ticketId,
+  //     companyId,
+  //     mediaType: {
+  //       [Op.or]: {
+  //         [Op.ne]: "reactionMessage",
+  //         [Op.is]: null
+  //       }
+  //     }
+  //   }
+  // };
 
-  if (
-    queues.length > 0 &&
-    (await GetCompanySetting(companyId, "messageVisibility", "message")) ===
-      "message"
-  ) {
-    // eslint-disable-next-line dot-notation
-    options.where["queueId"] = {
-      [Op.or]: {
-        [Op.in]: queues,
-        [Op.eq]: null
-      }
-    };
-  }
+  // if (
+  //   queues.length > 0 &&
+  //   (await GetCompanySetting(companyId, "messageVisibility", "message")) ===
+  //     "message"
+  // ) {
+  //   // eslint-disable-next-line dot-notation
+  //   options.where["queueId"] = {
+  //     [Op.or]: {
+  //       [Op.in]: queues,
+  //       [Op.eq]: null
+  //     }
+  //   };
+  // }
 
   const { count, rows: messages } = await Message.findAndCountAll({
-    ...options,
+    // ...options,
     limit,
     include: [
       "contact",
