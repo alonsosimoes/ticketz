@@ -33,13 +33,19 @@ const ListMessagesService = async ({
     throw new AppError("ERR_NO_TICKET_FOUND", 404);
   }
 
-  const limit = 20;
+  const limit = 100;
   const offset = limit * (+pageNumber - 1);
 
   const options: FindOptions = {
     where: {
       ticketId,
-      companyId
+      companyId,
+      mediaType: {
+        [Op.or]: {
+          [Op.ne]: "reactionMessage",
+          [Op.is]: null
+        }
+      }
     }
   };
 
@@ -77,6 +83,15 @@ const ListMessagesService = async ({
         where: {
           ticketId: ticket.id
         },
+        required: false
+      },
+      {
+        model: Message,
+        as: "replies",
+        where: {
+          ticketId: ticket.id
+        },
+        include: ["contact"],
         required: false
       },
       {
