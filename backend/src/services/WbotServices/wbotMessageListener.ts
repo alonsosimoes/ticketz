@@ -267,7 +267,7 @@ export const getQuotedMessageId = (msg: proto.IWebMessageInfo) => {
     Object.keys(msg?.message).values().next().value
   ];
 
-  return body?.contextInfo?.stanzaId;
+  return body?.contextInfo?.stanzaId || msg?.message?.reactionMessage?.key?.id;
 };
 
 const getMeSocket = (wbot: Session): IMe => {
@@ -699,7 +699,7 @@ export const verifyMessage = async (
     contactId: msg.key.fromMe ? undefined : contact.id,
     body,
     fromMe: msg.key.fromMe,
-    mediaType: getTypeMessage(msg),
+    mediaType: msg.message.reactionMessage ? "reactionMessage" : null,
     read: msg.key.fromMe,
     quotedMsgId: quotedMsg?.id,
     ack: msg.status,
