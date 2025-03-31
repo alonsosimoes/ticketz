@@ -6,6 +6,6 @@ import isAdmin from "../middleware/isAdmin";
 
 const routes = express.Router();
 
-routes.get("/dashboard", isAuth, isAdmin, DashboardController.index);
+routes.get("/dashboard", isAuth, DashboardController.index);
 
 export default routes;

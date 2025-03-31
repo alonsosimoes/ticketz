@@ -1,6 +1,8 @@
 const rules = {
 	user: {
-		static: [],
+		static: [
+			"drawer-user-items:view",
+		],
 	},
 
 	admin: {
