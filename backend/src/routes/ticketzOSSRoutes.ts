@@ -9,14 +9,12 @@ const ticketzOSSRoutes = Router();
 ticketzOSSRoutes.get(
   "/ticketz/registry",
   isAuth,
-  isSuper,
   TicketzOSSController.show
 );
 
 ticketzOSSRoutes.post(
   "/ticketz/registry",
   isAuth,
-  isSuper,
   TicketzOSSController.store
 );
 

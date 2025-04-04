@@ -10,9 +10,9 @@ const CheckContactSomeTickets = async (
     where: { contactId, companyId }
   });
 
-  if (ticket) {
-    throw new AppError("ERR_OTHER_OPEN_TICKET");
-  }
+  // if (ticket) {
+  //   throw new AppError("ERR_OTHER_OPEN_TICKET");
+  // }
 };
 
 export default CheckContactSomeTickets;
