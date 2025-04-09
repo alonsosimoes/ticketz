@@ -270,15 +270,6 @@ const TicketsListCustom = (props) => {
         return;
       }
 
-      const queueIds = queues.map((q) => q.id);
-      if (
-        profile === "user" &&
-        (queueIds.indexOf(data.ticket?.queue?.id) === -1 ||
-          data.ticket.queue === null)
-      ) {
-        return;
-      }
-
       if (
         data.action === "create" &&
         (!showTabGroups || !!data.ticket?.isGroup === !!groups) &&
