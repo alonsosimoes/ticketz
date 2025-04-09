@@ -205,16 +205,7 @@ const TicketsListCustom = (props) => {
   });
 
   useEffect(() => {
-    const queueIds = queues.map((q) => q.id);
-    const filteredTickets = tickets.filter(
-      (t) => queueIds.indexOf(t.queueId) > -1
-    );
-
-    if (profile === "user") {
-      dispatch({ type: "LOAD_TICKETS", payload: filteredTickets });
-    } else {
-      dispatch({ type: "LOAD_TICKETS", payload: tickets });
-    }
+     dispatch({ type: "LOAD_TICKETS", payload: tickets });
   }, [tickets, queues, profile]);
 
   useEffect(() => {
@@ -276,15 +267,6 @@ const TicketsListCustom = (props) => {
     const onCompanyAppMessage = (data) => {
 	  console.debug("appMessage event received", data);
       if (showTabGroups && !!data.ticket?.isGroup !== !!groups) {
-        return;
-      }
-
-      const queueIds = queues.map((q) => q.id);
-      if (
-        profile === "user" &&
-        (queueIds.indexOf(data.ticket?.queue?.id) === -1 ||
-          data.ticket.queue === null)
-      ) {
         return;
       }
 

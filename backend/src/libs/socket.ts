@@ -215,16 +215,10 @@ export const initIO = (httpServer: Server): SocketIO => {
     socket.on("joinNotification", async () => {
       const c = counters.incrementCounter("notification");
       if (c === 1) {
-        if (user.profile === "admin") {
-          socket.join(`company-${user.companyId}-notification`);
-        } else {
-          user.queues.forEach(queue => {
-            logger.debug(
-              `User ${user.id} of company ${user.companyId} joined queue ${queue.id} channel.`
-            );
-            socket.join(`queue-${queue.id}-notification`);
-          });
-        }
+        socket.join(`company-${user.companyId}-notification`);
+        logger.debug(
+          `User ${user.id} of company ${user.companyId} joined channel.`
+        );
       }
       logger.debug(`joinNotification[${c}]: User: ${user.id}`);
     });
@@ -232,25 +226,16 @@ export const initIO = (httpServer: Server): SocketIO => {
     socket.on("leaveNotification", async () => {
       const c = counters.decrementCounter("notification");
       if (c === 0) {
-        if (user.profile === "admin") {
-          socket.leave(`company-${user.companyId}-notification`);
-        } else {
-          user.queues.forEach(queue => {
-            logger.debug(
-              `User ${user.id} of company ${user.companyId} leaved queue ${queue.id} channel.`
-            );
-            socket.leave(`queue-${queue.id}-notification`);
-          });
-        }
+        socket.leave(`company-${user.companyId}-notification`);
       }
       logger.debug(`leaveNotification[${c}]: User: ${user.id}`);
     });
 
     socket.on("joinTickets", (status: string) => {
       if (counters.incrementCounter(`status-${status}`) === 1) {
-        if (user.profile === "admin") {
+        if (user.profile === "admin" || user.profile === "user") {
           logger.debug(
-            `Admin ${user.id} of company ${user.companyId} joined ${status} tickets channel.`
+            `User ${user.id} of company ${user.companyId} joined ${status} tickets channel.`
           );
           socket.join(`company-${user.companyId}-${status}`);
         } else if (status === "pending") {
@@ -268,7 +253,7 @@ export const initIO = (httpServer: Server): SocketIO => {
 
     socket.on("leaveTickets", (status: string) => {
       if (counters.decrementCounter(`status-${status}`) === 0) {
-        if (user.profile === "admin") {
+        if (user.profile === "admin" || user.profile === "user") {
           logger.debug(
             `Admin ${user.id} of company ${user.companyId} leaved ${status} tickets channel.`
           );
