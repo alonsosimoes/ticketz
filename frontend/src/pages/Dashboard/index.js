@@ -286,33 +286,14 @@ const Dashboard = () => {
     window.open("https://pro.ticke.tz", "_blank");
   }
   
-  useEffect(() => {
-    getCurrentUserInfo().then(
-      (user) => {
-        if (user?.profile !== "admin") {
-          window.location.href = "/tickets";
-        }
-        setCurrentUser(user);
-      }
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+ 
   useEffect(async () => {
     const registry = await api.get("/ticketz/registry");
 
     setRegistered( registry?.data?.disabled || !!(registry?.data?.whatsapp ) );
   }, []);
     
-  useEffect(() => {
-    async function firstLoad() {
-      await fetchData();
-    }
-    setTimeout(() => {
-      firstLoad();
-    }, 1000);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  
 
   async function handleChangePeriod(value) {
     setPeriod(value);
@@ -328,10 +309,23 @@ const Dashboard = () => {
     }
   }
 
+  useEffect(() => {
+    getCurrentUserInfo().then((user) => {
+      setCurrentUser(user);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (currentUser.id) {
+      fetchData();
+    }
+  }, [currentUser]);
+
   async function fetchData() {
     setLoading(true);
 
-    let params = {};
+    let params = {}; 
+    params.currentUser = currentUser.id;
 
     if (period > 0) {
       params = {
@@ -461,12 +455,12 @@ const Dashboard = () => {
     }
   }
 
-  if (currentUser?.profile !== "admin") {
-    return (
-      <div>
-      </div>
-    );
-  }
+  // if (currentUser?.profile !== "admin") {
+  //   return (
+  //     <div>
+  //     </div>
+  //   );
+  // }
       
   return (
     <div>
@@ -618,11 +612,11 @@ const Dashboard = () => {
           </Grid> */}
 
           {/* DASHBOARD ATENDIMENTOS HOJE */}
-          <Grid item xs={12}>
+          {/* <Grid item xs={12}>
             <Paper className={classes.fixedHeightPaper}>
               <Chart />
             </Paper>
-          </Grid>
+          </Grid> */}
 
           {/* FILTROS */}
           <Grid item xs={12} sm={6} md={4}>
@@ -877,6 +871,7 @@ const Dashboard = () => {
           </Grid>
 
           {/* USUARIOS ONLINE */}
+          {currentUser?.profile == "admin" && (
           <Grid item xs={12}>
             {attendants.length ? (
               <TableAttendantsStatus
@@ -885,6 +880,7 @@ const Dashboard = () => {
               />
             ) : null}
           </Grid>
+          )}
 
         </Grid>
       </Container>
