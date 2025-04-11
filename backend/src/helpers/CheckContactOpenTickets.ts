@@ -20,9 +20,9 @@ const CheckContactOpenTickets = async (
     where
   });
 
-  // if (ticket && !returnTicket) {
-  //   throw new AppError("ERR_OTHER_OPEN_TICKET");
-  // }
+  if (ticket && !returnTicket) {
+    throw new AppError("ERR_OTHER_OPEN_TICKET");
+  }
 
   return ticket;
 };

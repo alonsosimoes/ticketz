@@ -80,7 +80,8 @@ const UpdateTicketService = async ({
     if (tokenData && ticket.status !== "pending") {
       if (
         tokenData.profile !== "admin" &&
-        ticket.userId !== parseInt(tokenData.id, 10)
+        ticket.userId !== parseInt(tokenData.id, 10) && 
+        tokenData.profile !== "user"
       ) {
         throw new AppError(
           "Apenas o usuário ativo do ticket ou o Admin podem fazer alterações no ticket"

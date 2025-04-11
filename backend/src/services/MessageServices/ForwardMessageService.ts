@@ -32,9 +32,9 @@ const ForwardMessageService = async (
 
   let ticket = await CheckContactOpenTickets(contact.id, whatsapp.id, true);
 
-  // if (ticket && ticket.userId !== user.id) {
-  //   throw new AppError("ERR_OTHER_OPEN_TICKET", 400);
-  // }
+  if (ticket && ticket.userId !== user.id) {
+    throw new AppError("ERR_OTHER_OPEN_TICKET", 400);
+  }
 
   if (!ticket) {
     ticket = await CreateTicketService({
