@@ -57,6 +57,7 @@ import Whatsapp from "../../models/Whatsapp";
 import { SimpleObjectCache } from "../../helpers/simpleObjectCache";
 import { getPublicPath } from "../../helpers/GetPublicPath";
 import { Session } from "../../libs/wbot";
+import { checkCompanyCompliant } from "../../helpers/CheckCompanyCompliant";
 
 export interface ImessageUpsert {
   messages: proto.IWebMessageInfo[];
@@ -1059,6 +1060,11 @@ const startQueue = async (
     companyId: ticket.companyId
   });
 
+  // do not process queue if company is not compliant with payments
+  if (!(await checkCompanyCompliant(companyId))) {
+    return;
+  }
+
   let filePath = null;
   let optionsMsg = null;
 
@@ -1289,7 +1295,6 @@ export const handleRating = async (
   ticket: Ticket,
   ticketTraking: TicketTraking
 ) => {
-  const io = getIO();
   let rate: number | null = null;
 
   if (msg?.message?.conversation || msg?.message?.extendedTextMessage) {
@@ -1346,6 +1351,12 @@ export const handleRating = async (
       userId: keepUserAndQueue ? ticket.userId : null,
       status: "closed"
     });
+
+    if (!(await checkCompanyCompliant(ticket.companyId))) {
+      return;
+    }
+
+    const io = getIO();
 
     io.to(`company-${ticket.companyId}-open`)
       .to(`queue-${ticket.queueId}-open`)
@@ -1736,12 +1747,43 @@ const handleMessage = async (
       }
     }
 
+    const scheduleType = await GetCompanySetting(
+      companyId,
+      "scheduleType",
+      "disabled"
+    );
+
+    const outOfHoursAction = await GetCompanySetting(
+      companyId,
+      "outOfHoursAction",
+      "pending"
+    );
+    let currentSchedule: ScheduleResult = null;
+
+    if (scheduleType === "company") {
+      currentSchedule = await VerifyCurrentSchedule(companyId);
+    }
+
+    let defaultQueue: Queue;
+
+    if (
+      (msg.key.fromMe ||
+        contact.disableBot ||
+        currentSchedule?.inActivity === false) &&
+      !contact.isGroup &&
+      whatsapp.queues.length === 1
+    ) {
+      defaultQueue = await Queue.findByPk(whatsapp.queues[0].id);
+    }
+
     const { ticket, justCreated } = await FindOrCreateTicketService(
       contact,
       wbot.id!,
       unreadMessages,
       companyId,
-      groupContact
+      groupContact,
+      undefined,
+      defaultQueue
     );
 
     // voltar para o menu inicial
@@ -1787,21 +1829,8 @@ const handleMessage = async (
       return;
     }
 
-    const scheduleType = await GetCompanySetting(
-      companyId,
-      "scheduleType",
-      "disabled"
-    );
-
     try {
       if (!msg.key.fromMe && scheduleType) {
-        const outOfHoursAction = await GetCompanySetting(
-          companyId,
-          "outOfHoursAction",
-          "pending"
-        );
-        let currentSchedule: ScheduleResult = null;
-
         const isOpenOnline =
           ticket.status === "open" && ticket.user.socketSessions.length > 0;
 
@@ -1809,8 +1838,6 @@ const handleMessage = async (
           !isOpenOnline && outOfHoursCache.get(`ticket-${ticket.id}`);
 
         if (scheduleType === "company" && !isOpenOnline) {
-          currentSchedule = await VerifyCurrentSchedule(companyId);
-
           if (
             !isNil(currentSchedule) &&
             (!currentSchedule || currentSchedule.inActivity === false)
@@ -1940,12 +1967,7 @@ const handleMessage = async (
       }
     }
 
-    if (whatsapp.queues.length === 1 && ticket.queue) {
-      if (ticket.chatbot && !msg.key.fromMe) {
-        await handleChartbot(ticket, msg, wbot, dontReadTheFirstQuestion);
-      }
-    }
-    if (whatsapp.queues.length > 1 && ticket.queue) {
+    if (whatsapp.queues.length && ticket.queue) {
       if (ticket.chatbot && !msg.key.fromMe) {
         await handleChartbot(ticket, msg, wbot, dontReadTheFirstQuestion);
       }

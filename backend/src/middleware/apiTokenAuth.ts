@@ -31,7 +31,8 @@ const apiTokenAuth = async (
       where: {
         profile: "admin",
         companyId: setting.companyId
-      }
+      },
+      order: [["id", "ASC"]]
     });
 
     if (user) {
@@ -39,8 +40,9 @@ const apiTokenAuth = async (
         id: `${user.id}`,
         profile: user.profile,
         isSuper: false,
-        companyId: setting.companyId
+        companyId: user.companyId
       };
+      req.companyId = user.companyId;
     }
 
     return next();

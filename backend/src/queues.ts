@@ -26,6 +26,7 @@ import Plan from "./models/Plan";
 import { handleMessage } from "./services/WbotServices/wbotMessageListener";
 import ShowService from "./services/CampaignService/ShowService";
 import Invoices from "./models/Invoices";
+import { mustacheFormat } from "./helpers/Mustache";
 
 const connection = process.env.REDIS_URI || "";
 const limiterMax = process.env.REDIS_OPT_LIMITER_MAX || 1;
@@ -119,7 +120,12 @@ async function handleSendScheduledMessage(job) {
   let scheduleRecord: Schedule | null = null;
 
   try {
-    scheduleRecord = await Schedule.findByPk(schedule.id);
+    scheduleRecord = await Schedule.findByPk(schedule.id, {
+      include: [
+        { model: Contact, as: "contact" },
+        { model: User, as: "user" }
+      ]
+    });
   } catch (e) {
     Sentry.captureException(e);
     logger.info(`Erro ao tentar consultar agendamento: ${schedule.id}`);
@@ -130,7 +136,11 @@ async function handleSendScheduledMessage(job) {
 
     const message = await SendMessage(whatsapp, {
       number: schedule.contact.number,
-      body: schedule.body
+      body: mustacheFormat({
+        body: schedule.body,
+        contact: schedule.contact,
+        currentUser: schedule.user
+      })
     });
 
     if (schedule.saveMessage) {
@@ -511,7 +521,7 @@ async function handleDispatchCampaign(job) {
     const { data } = job;
     const { campaignShippingId, campaignId }: DispatchCampaignData = data;
     const campaign = await Campaign.findByPk(campaignId, {
-      include: [{ model: Whatsapp, as: "whatsapp" }]
+      include: ["contactList", { model: Whatsapp, as: "whatsapp" }]
     });
 
     if (!campaign) {

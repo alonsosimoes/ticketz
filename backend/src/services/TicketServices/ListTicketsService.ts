@@ -12,6 +12,7 @@ import Tag from "../../models/Tag";
 import TicketTag from "../../models/TicketTag";
 import Whatsapp from "../../models/Whatsapp";
 import { GetCompanySetting } from "../../helpers/CheckSettings";
+import TicketTraking from "../../models/TicketTraking";
 
 interface Request {
   isSearch?: boolean;
@@ -62,8 +63,14 @@ const ListTicketsService = async ({
 
   const user = await ShowUserService(userId);
 
+  const andedOrs = [
+    {
+      [Op.or]: [{ userId }, { status: "pending" }]
+    }
+  ];
+
   let whereCondition: Filterable["where"] = {
-    [Op.or]: [{ userId }, { status: "pending" }],
+    [Op.and]: andedOrs,
     queueId: {
       [Op.or]: user.profile === "admin" ? [queueIds, null] : [queueIds, null]
     }
@@ -103,7 +110,9 @@ const ListTicketsService = async ({
   ];
 
   if (showAll === "true") {
+    andedOrs.length = 0;
     whereCondition = {
+      [Op.and]: andedOrs,
       queueId: { [Op.or]: [queueIds, null] }
     };
     if (groupsTab) {
@@ -112,6 +121,24 @@ const ListTicketsService = async ({
   }
 
   if (status) {
+    includeCondition = [
+      ...includeCondition,
+      {
+        model: TicketTraking,
+        as: "ticketTraking",
+        attributes: ["id", "ratingAt", "rated"],
+        required: false
+      }
+    ];
+
+    // when status is requested, only list tickets that are not waiting for rating
+    andedOrs.push({
+      [Op.or]: [
+        { "$ticketTraking.ratingAt$": null },
+        { "$ticketTraking.rated$": true }
+      ] as any[]
+    });
+
     whereCondition = {
       ...whereCondition,
       status
@@ -139,8 +166,7 @@ const ListTicketsService = async ({
       }
     ];
 
-    whereCondition = {
-      ...whereCondition,
+    andedOrs.push({
       [Op.or]: [
         {
           "$contact.name$": where(
@@ -158,12 +184,13 @@ const ListTicketsService = async ({
         //     `%${sanitizedSearchParam}%`
         //   )
         // }
-      ]
-    };
+      ] as any[]
+    });
   }
 
   if (date) {
     whereCondition = {
+      [Op.and]: andedOrs,
       createdAt: {
         [Op.between]: [+startOfDay(parseISO(date)), +endOfDay(parseISO(date))]
       }
@@ -172,6 +199,7 @@ const ListTicketsService = async ({
 
   if (updatedAt) {
     whereCondition = {
+      [Op.and]: andedOrs,
       updatedAt: {
         [Op.between]: [
           +startOfDay(parseISO(updatedAt)),
