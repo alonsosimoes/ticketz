@@ -40,6 +40,7 @@ import { SocketContext } from "../../context/Socket/SocketContext";
 import { i18n } from "../../translate/i18n";
 import vCard from "vcard-parser";
 import { generateColor } from "../../helpers/colorGenerator";
+import { URLCharEncoder } from "../../helpers/URLCharEncoder";
 import { getInitials } from "../../helpers/getInitials";
 import { Mutex } from "async-mutex";
 
@@ -498,6 +499,12 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: 15,
     backgroundColor: "gray",
     cursor: "default"
+  },
+  mediaDescription: {
+    padding: 5,
+    marginBottom: 5,
+    borderLeft: "5px solid",
+    borderColor: theme.mode === 'light' ? "#000" : "#fff",
   }
 }));
 
@@ -737,9 +744,18 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead }) => {
     if (!document && message.mediaType === "audio") {
 
       return (
-        <audio className={classes.audioBottom} controls>
-          <source src={message.mediaUrl} type="audio/ogg"></source>
-        </audio>
+        <>
+          <audio className={classes.audioBottom} controls>
+            <source src={message.mediaUrl} type="audio/ogg"></source>
+          </audio>
+          {
+            message.body &&
+            !message.body.startsWith("Áudio") &&
+            <div className={classes.mediaDescription}>
+              {message.body}
+            </div>
+          }
+        </>
       );
     }
 
@@ -761,7 +777,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead }) => {
               color="primary"
               variant="outlined"
               target="_blank"
-              href={message.mediaUrl.replace(/%/g, '%25')}
+              href={URLCharEncoder(message.mediaUrl)}
             >
              { document?.fileName || message.body}
             </Button>

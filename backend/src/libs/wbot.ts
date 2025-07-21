@@ -7,8 +7,9 @@ import makeWASocket, {
   CacheStore,
   WAMessageKey,
   WAMessageContent,
-  proto
-} from "@whiskeysockets/baileys";
+  proto,
+  jidNormalizedUser
+} from "baileys";
 
 import { Boom } from "@hapi/boom";
 // import MAIN_LOGGER from "@whiskeysockets/baileys/lib/Utils/logger";
@@ -28,13 +29,22 @@ import { GitInfo } from "../gitinfo";
 import GetPublicSettingService from "../services/SettingServices/GetPublicSettingService";
 import waVersion from "../waversion.json";
 import Message from "../models/Message";
+import OutOfTicketMessage from "../models/OutOfTicketMessages";
+import BaileysKeys from "../models/BaileysKeys";
+import { DecoupledDriverServices } from "../services/DecoupledDriverServices/DecoupledDriverServices";
+import ShowTicketService from "../services/TicketServices/ShowTicketService";
+import GetTicketWbot from "../helpers/GetTicketWbot";
+import { getJidOf } from "../services/WbotServices/getJidOf";
 
 // const loggerBaileys = MAIN_LOGGER.child({});
 // loggerBaileys.level = process.env.BAILEYS_LOG_LEVEL || "error";
 
 export type Session = WASocket & {
   id?: number;
+  myJid?: string;
+  myLid?: string;
   cacheMessage?: (msg: proto.IWebMessageInfo) => void;
+  isRefreshing?: boolean;
 };
 
 const sessions: Session[] = [];
@@ -72,11 +82,15 @@ export const removeWbot = async (
 
       sessions[sessionIndex].ws.removeAllListeners();
       await sessions[sessionIndex].ws.close();
-
       sessions.splice(sessionIndex, 1);
     }
   } catch (err) {
     logger.error(err);
+  }
+  if (isLogout) {
+    await BaileysKeys.destroy({
+      where: { whatsappId }
+    });
   }
 };
 
@@ -111,7 +125,8 @@ const getProjectWAVersion = async () => {
 
 export const initWASocket = async (
   whatsapp: Whatsapp,
-  proxy?: Agent
+  proxy?: Agent,
+  isRefresh = false
 ): Promise<Session> => {
   return new Promise((resolve, reject) => {
     try {
@@ -160,9 +175,22 @@ export const initWASocket = async (
             "cacheMessage: not found in cache - fallback to database"
           );
 
-          const msg = await Message.findOne({
+          let msg: Message | OutOfTicketMessage;
+
+          msg = await Message.findOne({
             where: { id: key.id, fromMe: true }
           });
+
+          if (!msg) {
+            msg = await OutOfTicketMessage.findOne({
+              where: { id: key.id }
+            });
+          }
+
+          if (!msg) {
+            logger.debug({ key }, "cacheMessage: not found in database");
+            return undefined;
+          }
 
           try {
             const data = JSON.parse(msg.dataJson);
@@ -229,6 +257,7 @@ export const initWASocket = async (
           logger: loggerBaileys,
           printQRInTerminal: false,
           emitOwnEvents: false,
+          markOnlineOnConnect: false,
           browser: [clientName, "Desktop", appVersion],
           auth: {
             creds: state.creds,
@@ -251,6 +280,8 @@ export const initWASocket = async (
           transactionOpts: { maxCommitRetries: 1, delayBetweenTriesMs: 10 }
         });
 
+        wsocket.isRefreshing = isRefresh;
+
         wsocket.cacheMessage = (msg: proto.IWebMessageInfo): void => {
           if (!msg.key.fromMe) return;
 
@@ -269,18 +300,24 @@ export const initWASocket = async (
 
             if (connection === "close") {
               if ((lastDisconnect?.error as Boom)?.output?.statusCode === 403) {
-                await whatsapp.update({ status: "PENDING", session: "" });
+                // disconnected from whatsapp
+                await removeWbot(id);
+                await whatsapp.update({
+                  status: "DISCONNECTED",
+                  session: "",
+                  qrcode: ""
+                });
                 await DeleteBaileysService(whatsapp.id);
                 io.emit(`company-${whatsapp.companyId}-whatsappSession`, {
                   action: "update",
                   session: whatsapp
                 });
-                removeWbot(id, false);
               }
               if (
                 (lastDisconnect?.error as Boom)?.output?.statusCode !==
                 DisconnectReason.loggedOut
               ) {
+                // connection dropped without logging out
                 await whatsapp.update({ status: "PENDING" });
                 io.emit(`company-${whatsapp.companyId}-whatsappSession`, {
                   action: "update",
@@ -290,32 +327,51 @@ export const initWASocket = async (
                   logger.info(`Reconnecting ${name} in 2 seconds`);
                   setTimeout(async () => {
                     await whatsapp.reload();
-                    await StartWhatsAppSession(whatsapp, whatsapp.companyId);
+                    await StartWhatsAppSession(
+                      whatsapp,
+                      whatsapp.companyId,
+                      true
+                    );
                   }, 2000);
                 });
               } else {
-                await whatsapp.update({ status: "PENDING", session: "" });
+                // logged out
+                await removeWbot(id);
+                await whatsapp.update({
+                  status: "DISCONNECTED",
+                  session: "",
+                  qrcode: ""
+                });
                 await DeleteBaileysService(whatsapp.id);
                 io.emit(`company-${whatsapp.companyId}-whatsappSession`, {
                   action: "update",
                   session: whatsapp
                 });
-                removeWbot(id, false).then(() => {
-                  logger.info(`Reconnecting ${name} in 2 seconds`);
-                  setTimeout(async () => {
-                    await whatsapp.reload();
-                    await StartWhatsAppSession(whatsapp, whatsapp.companyId);
-                  }, 2000);
-                });
               }
             }
 
             if (connection === "open") {
+              wsocket.myLid = jidNormalizedUser(wsocket.user?.lid);
+              wsocket.myJid = jidNormalizedUser(wsocket.user.id);
+
               await whatsapp.update({
                 status: "CONNECTED",
                 qrcode: "",
                 retries: 0
               });
+
+              logger.debug(
+                {
+                  id: jidNormalizedUser(wsocket.user.id),
+                  name: wsocket.user.name,
+                  lid: jidNormalizedUser(wsocket.user?.lid),
+                  notify: wsocket.user?.notify,
+                  verifiedName: wsocket.user?.verifiedName,
+                  imgUrl: wsocket.user?.imgUrl,
+                  status: wsocket.user?.status
+                },
+                `Session ${name} details`
+              );
 
               io.emit(`company-${whatsapp.companyId}-whatsappSession`, {
                 action: "update",
@@ -330,6 +386,28 @@ export const initWASocket = async (
                 sessions.push(wsocket);
               }
 
+              if (wsocket.isRefreshing) {
+                setTimeout(() => {
+                  wsocket
+                    .resyncAppState(
+                      [
+                        "critical_block",
+                        "critical_unblock_low",
+                        "regular_high",
+                        "regular_low",
+                        "regular"
+                      ],
+                      true
+                    )
+                    .catch(error => {
+                      logger.error(
+                        { message: error.message },
+                        `Error resyncing app state for session ${name}`
+                      );
+                    });
+                }, 5000);
+                wsocket.isRefreshing = false;
+              }
               resolve(wsocket);
             }
 
@@ -460,3 +538,41 @@ export const initWASocket = async (
     }
   });
 };
+
+const decoupledDriverServices = DecoupledDriverServices.getInstance();
+
+decoupledDriverServices.registerFunction(
+  "presenceUpdate",
+  async (user, parameters) => {
+    const { ticketId, presence } = parameters;
+    const ticket = await ShowTicketService(ticketId);
+    if (!ticket || ticket.companyId !== user.companyId) {
+      return;
+    }
+
+    const wbot = await GetTicketWbot(ticket);
+    if (!wbot) {
+      return;
+    }
+
+    const jid = getJidOf(ticket);
+
+    if (jid.endsWith("@lid")) {
+      return;
+    }
+
+    wbot.sendPresenceUpdate(presence, jid).catch(err => {
+      logger.error(
+        {
+          message: err.message,
+          jid,
+          presence,
+          ticketId: ticket.id,
+          companyId: ticket.companyId,
+          connection: ticket.whatsapp?.name
+        },
+        "Error sending presence update"
+      );
+    });
+  }
+);

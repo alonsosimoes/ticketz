@@ -2,8 +2,10 @@ import { Sequelize } from "sequelize-typescript";
 import User from "../models/User";
 import Setting from "../models/Setting";
 import Contact from "../models/Contact";
+import ContactTag from "../models/ContactTag";
 import Ticket from "../models/Ticket";
 import Whatsapp from "../models/Whatsapp";
+import WhatsappLidMap from "../models/WhatsappLidMap";
 import ContactCustomField from "../models/ContactCustomField";
 import Message from "../models/Message";
 import OldMessage from "../models/OldMessage";
@@ -16,6 +18,7 @@ import TicketNote from "../models/TicketNote";
 import QuickMessage from "../models/QuickMessage";
 import Help from "../models/Help";
 import TicketTraking from "../models/TicketTraking";
+import Counter from "../models/Counter";
 import UserRating from "../models/UserRating";
 import QueueOption from "../models/QueueOption";
 import Schedule from "../models/Schedule";
@@ -35,6 +38,7 @@ import Invoices from "../models/Invoices";
 import Subscriptions from "../models/Subscriptions";
 import BaileysKeys from "../models/BaileysKeys";
 import UserSocketSession from "../models/UserSocketSession";
+import OutOfTicketMessage from "../models/OutOfTicketMessages";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const dbConfig = require("../config/database");
@@ -46,10 +50,12 @@ const models = [
   User,
   UserSocketSession,
   Contact,
+  ContactTag,
   Ticket,
   Message,
   OldMessage,
   Whatsapp,
+  WhatsappLidMap,
   ContactCustomField,
   Setting,
   Queue,
@@ -60,6 +66,7 @@ const models = [
   QuickMessage,
   Help,
   TicketTraking,
+  Counter,
   UserRating,
   QueueOption,
   Schedule,
@@ -77,6 +84,7 @@ const models = [
   ChatUser,
   ChatMessage,
   Invoices,
+  OutOfTicketMessage,
   Subscriptions
 ];
 

@@ -3,6 +3,7 @@ const messages = {
     translations: {
       common: {
         search: "Pesquisar",
+        filter: "Filtrar",
         edit: "Editar",
         delete: "Eliminar",
         cancel: "Cancelar",
@@ -709,7 +710,8 @@ const messages = {
         table: {
           name: "Nome",
           color: "Cor",
-          tickets: "Registros",
+          tickets: "Tickets",
+          contacts: "Contactos",
           actions: "Ações",
           id: "Id",
           kanban: "Kanban",
@@ -799,6 +801,13 @@ const messages = {
             disabled: "Desativado",
           },
         },
+        ShowNumericEmoticons: {
+          title: "Exibir emojis numéricos na fila",
+          options: {
+            enabled: "Ativado",
+            disabled: "Desativado",
+          },
+        },
         QuickMessages: {
           title: "Mensagens Rápidas",
           options: {
@@ -829,6 +838,20 @@ const messages = {
             enabled: "Ativado",
             disabled: "Desativado",
           },
+        },
+        GracePeriod: {
+          title: "Carência após vencimento (dias)",
+        },
+        "ticketAcceptedMessage": {
+          "title": "Mensagem de ticket aceito",
+          "placeholder": "Digite sua mensagem de ticket aceito aqui"
+        },
+        "transferMessage": {
+          "title": "Mensagem de transferência",
+          "placeholder": "Digite sua mensagem de transferência aqui"
+        },
+        "mustacheVariables": {
+          "title": "Variáveis disponíveis:"
         },
         WelcomeGreeting: {
           greetings: "Olá",

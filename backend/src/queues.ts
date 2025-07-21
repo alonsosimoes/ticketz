@@ -1,47 +1,37 @@
 import * as Sentry from "@sentry/node";
 import Queue from "bull";
 import moment from "moment";
-import { Op, QueryTypes } from "sequelize";
-import { isEmpty, isNil, isArray } from "lodash";
-import path from "path";
+import { Op, WhereOptions } from "sequelize";
 import { CronJob } from "cron";
+import { subDays, subMinutes } from "date-fns";
 import { MessageData, SendMessage } from "./helpers/SendMessage";
 import Whatsapp from "./models/Whatsapp";
 import { logger } from "./utils/logger";
 import Schedule from "./models/Schedule";
 import Contact from "./models/Contact";
 import GetDefaultWhatsApp from "./helpers/GetDefaultWhatsApp";
-import Campaign from "./models/Campaign";
-import ContactList from "./models/ContactList";
-import ContactListItem from "./models/ContactListItem";
-import CampaignSetting from "./models/CampaignSetting";
-import CampaignShipping from "./models/CampaignShipping";
 import GetWhatsappWbot from "./helpers/GetWhatsappWbot";
-import sequelize from "./database";
-import { getMessageOptions } from "./services/WbotServices/SendWhatsAppMedia";
-import { getIO } from "./libs/socket";
 import User from "./models/User";
 import Company from "./models/Company";
 import Plan from "./models/Plan";
+import TicketTraking from "./models/TicketTraking";
+import { GetCompanySetting } from "./helpers/CheckSettings";
+import { getWbot } from "./libs/wbot";
+import Ticket from "./models/Ticket";
+import QueueModel from "./models/Queue";
+import UpdateTicketService from "./services/TicketServices/UpdateTicketService";
 import { handleMessage } from "./services/WbotServices/wbotMessageListener";
-import ShowService from "./services/CampaignService/ShowService";
 import Invoices from "./models/Invoices";
-import { mustacheFormat } from "./helpers/Mustache";
+import formatBody, { mustacheFormat } from "./helpers/Mustache";
+import Setting from "./models/Setting";
+import { parseToMilliseconds } from "./helpers/parseToMilliseconds";
+import { startCampaignQueues } from "./queues/campaign";
+import OutOfTicketMessage from "./models/OutOfTicketMessages";
+import { getJidOf } from "./services/WbotServices/getJidOf";
 
 const connection = process.env.REDIS_URI || "";
 const limiterMax = process.env.REDIS_OPT_LIMITER_MAX || 1;
 const limiterDuration = process.env.REDIS_OPT_LIMITER_DURATION || 3000;
-
-interface ProcessCampaignData {
-  id: number;
-  delay: number;
-}
-
-interface DispatchCampaignData {
-  campaignId: number;
-  campaignShippingId: number;
-  contactListItemId: number;
-}
 
 export const userMonitor = new Queue("UserMonitor", connection);
 
@@ -57,8 +47,6 @@ export const sendScheduledMessages = new Queue(
   "SendSacheduledMessages",
   connection
 );
-
-export const campaignQueue = new Queue("CampaignQueue", connection);
 
 async function handleSendMessage(job) {
   try {
@@ -113,7 +101,18 @@ async function handleVerifySchedules() {
   }
 }
 
+async function handleExpireOutOfTicketMessages() {
+  OutOfTicketMessage.destroy({
+    where: {
+      createdAt: {
+        [Op.lt]: subDays(new Date(), 1)
+      }
+    }
+  });
+}
+
 async function handleSendScheduledMessage(job) {
+  handleExpireOutOfTicketMessages();
   const {
     data: { schedule }
   } = job;
@@ -171,113 +170,6 @@ async function handleSendScheduledMessage(job) {
   }
 }
 
-async function handleVerifyCampaigns() {
-  /**
-   * @todo
-   * Implementar filtro de campanhas
-   */
-  const campaigns: { id: number; scheduledAt: string }[] =
-    await sequelize.query(
-      `select id, "scheduledAt" from "Campaigns" c
-    where "scheduledAt" between now() and now() + '1 hour'::interval and status = 'PROGRAMADA'`,
-      { type: QueryTypes.SELECT }
-    );
-
-  if (campaigns.length) {
-    logger.info(`Campanhas encontradas: ${campaigns.length}`);
-  }
-  campaigns.forEach(campaign => {
-    try {
-      const now = moment();
-      const scheduledAt = moment(campaign.scheduledAt);
-      const delay = scheduledAt.diff(now, "milliseconds");
-      logger.info(
-        `Campanha enviada para a fila de processamento: Campanha=${campaign.id}, Delay Inicial=${delay}`
-      );
-      campaignQueue.add(
-        "ProcessCampaign",
-        {
-          id: campaign.id,
-          delay
-        },
-        {
-          removeOnComplete: true
-        }
-      );
-    } catch (err: unknown) {
-      Sentry.captureException(err);
-    }
-  });
-}
-
-async function getCampaign(id: number) {
-  return Campaign.findByPk(id, {
-    include: [
-      {
-        model: ContactList,
-        as: "contactList",
-        attributes: ["id", "name"],
-        include: [
-          {
-            model: ContactListItem,
-            as: "contacts",
-            attributes: ["id", "name", "number", "email", "isWhatsappValid"],
-            where: { isWhatsappValid: true }
-          }
-        ]
-      },
-      {
-        model: Whatsapp,
-        as: "whatsapp",
-        attributes: ["id", "name"]
-      },
-      {
-        model: CampaignShipping,
-        as: "shipping",
-        include: [{ model: ContactListItem, as: "contact" }]
-      }
-    ]
-  });
-}
-
-async function getSettings(campaign) {
-  const settings = await CampaignSetting.findAll({
-    where: { companyId: campaign.companyId },
-    attributes: ["key", "value"]
-  });
-
-  let messageInterval = 20;
-  let longerIntervalAfter = 20;
-  let greaterInterval = 60;
-  let variables: any[] = [];
-
-  settings.forEach(setting => {
-    if (setting.key === "messageInterval") {
-      messageInterval = JSON.parse(setting.value);
-    }
-    if (setting.key === "longerIntervalAfter") {
-      longerIntervalAfter = JSON.parse(setting.value);
-    }
-    if (setting.key === "greaterInterval") {
-      greaterInterval = JSON.parse(setting.value);
-    }
-    if (setting.key === "variables") {
-      variables = JSON.parse(setting.value);
-    }
-  });
-
-  return {
-    messageInterval,
-    longerIntervalAfter,
-    greaterInterval,
-    variables
-  };
-}
-
-export function parseToMilliseconds(seconds: number) {
-  return seconds * 1000;
-}
-
 export async function sleep(seconds: number) {
   logger.info(
     `Sleep de ${seconds} segundos iniciado: ${moment().format("HH:mm:ss")}`
@@ -294,306 +186,369 @@ export async function sleep(seconds: number) {
   });
 }
 
-function getCampaignValidMessages(campaign) {
-  const messages = [];
-
-  if (!isEmpty(campaign.message1) && !isNil(campaign.message1)) {
-    messages.push(campaign.message1);
-  }
-
-  if (!isEmpty(campaign.message2) && !isNil(campaign.message2)) {
-    messages.push(campaign.message2);
-  }
-
-  if (!isEmpty(campaign.message3) && !isNil(campaign.message3)) {
-    messages.push(campaign.message3);
-  }
-
-  if (!isEmpty(campaign.message4) && !isNil(campaign.message4)) {
-    messages.push(campaign.message4);
-  }
-
-  if (!isEmpty(campaign.message5) && !isNil(campaign.message5)) {
-    messages.push(campaign.message5);
-  }
-
-  return messages;
-}
-
-function getCampaignValidConfirmationMessages(campaign) {
-  const messages = [];
-
-  if (
-    !isEmpty(campaign.confirmationMessage1) &&
-    !isNil(campaign.confirmationMessage1)
-  ) {
-    messages.push(campaign.confirmationMessage1);
-  }
-
-  if (
-    !isEmpty(campaign.confirmationMessage2) &&
-    !isNil(campaign.confirmationMessage2)
-  ) {
-    messages.push(campaign.confirmationMessage2);
-  }
-
-  if (
-    !isEmpty(campaign.confirmationMessage3) &&
-    !isNil(campaign.confirmationMessage3)
-  ) {
-    messages.push(campaign.confirmationMessage3);
-  }
-
-  if (
-    !isEmpty(campaign.confirmationMessage4) &&
-    !isNil(campaign.confirmationMessage4)
-  ) {
-    messages.push(campaign.confirmationMessage4);
-  }
-
-  if (
-    !isEmpty(campaign.confirmationMessage5) &&
-    !isNil(campaign.confirmationMessage5)
-  ) {
-    messages.push(campaign.confirmationMessage5);
-  }
-
-  return messages;
-}
-
-function getProcessedMessage(msg: string, variables: any[], contact: any) {
-  let finalMessage = msg;
-
-  if (finalMessage.includes("{nome}")) {
-    finalMessage = finalMessage.replace(/{nome}/g, contact.name);
-  }
-
-  if (finalMessage.includes("{email}")) {
-    finalMessage = finalMessage.replace(/{email}/g, contact.email);
-  }
-
-  if (finalMessage.includes("{numero}")) {
-    finalMessage = finalMessage.replace(/{numero}/g, contact.number);
-  }
-
-  variables.forEach(variable => {
-    if (finalMessage.includes(`{${variable.key}}`)) {
-      const regex = new RegExp(`{${variable.key}}`, "g");
-      finalMessage = finalMessage.replace(regex, variable.value);
-    }
+async function setRatingExpired(tracking: TicketTraking, threshold: Date) {
+  await tracking.update({
+    expired: true
   });
 
-  return finalMessage;
-}
-
-export function randomValue(min, max) {
-  return Math.floor(Math.random() * max) + min;
-}
-
-async function verifyAndFinalizeCampaign(campaign: Campaign) {
-  const data = await ShowService(campaign.id);
-
-  if (data.valids === data.delivered) {
-    await campaign.update({ status: "FINALIZADA", completedAt: moment() });
+  if (tracking.ratingAt < subMinutes(threshold, 5)) {
+    return;
   }
 
-  const io = getIO();
-  io.emit(`company-${campaign.companyId}-campaign`, data);
+  const wbot = getWbot(tracking.whatsapp.id);
+
+  const complationMessage =
+    tracking.whatsapp.complationMessage.trim() || "Atendimento finalizado";
+
+  await wbot.sendMessage(getJidOf(tracking.ticket), {
+    text: formatBody(`\u200e${complationMessage}`, tracking.ticket)
+  });
+
+  logger.debug({ tracking }, "rating timedout");
 }
 
-async function prepareContact(
-  campaign: Campaign,
-  variables: any[],
-  contact: ContactListItem,
-  delay: number,
-  messages: string | any[],
-  confirmationMessages: string | any[]
-) {
-  const campaignShipping: any = {};
-  campaignShipping.number = contact.number;
-  campaignShipping.contactId = contact.id;
-  campaignShipping.campaignId = campaign.id;
-
-  if (messages.length) {
-    const radomIndex = randomValue(0, messages.length);
-    const message = getProcessedMessage(
-      messages[radomIndex],
-      variables,
-      contact
-    );
-    campaignShipping.message = `${message}`;
-  }
-
-  if (campaign.confirmation) {
-    if (confirmationMessages.length) {
-      const radomIndex = randomValue(0, confirmationMessages.length);
-      const message = getProcessedMessage(
-        confirmationMessages[radomIndex],
-        variables,
-        contact
-      );
-      campaignShipping.confirmationMessage = `${message}`;
-    }
-  }
-
-  const [record, created] = await CampaignShipping.findOrCreate({
+async function handleRatingsTimeout() {
+  const openTrackingRatings = await TicketTraking.findAll({
     where: {
-      campaignId: campaignShipping.campaignId,
-      contactId: campaignShipping.contactId
+      rated: false,
+      expired: false,
+      ratingAt: { [Op.not]: null }
     },
-    defaults: campaignShipping
-  });
-
-  if (
-    !created &&
-    record.deliveredAt === null &&
-    record.confirmationRequestedAt === null
-  ) {
-    record.set(campaignShipping);
-    await record.save();
-  }
-
-  if (record.deliveredAt === null && record.confirmationRequestedAt === null) {
-    const nextJob = await campaignQueue.add(
-      "DispatchCampaign",
+    include: [
       {
-        campaignId: campaign.id,
-        campaignShippingId: record.id,
-        contactListItemId: contact.id
+        model: Ticket,
+        include: [
+          {
+            model: Contact
+          },
+          {
+            model: User
+          },
+          {
+            model: QueueModel,
+            as: "queue"
+          }
+        ]
       },
       {
-        delay
+        model: Whatsapp
       }
-    );
+    ]
+  });
 
-    await record.update({ jobId: `${nextJob.id}` });
-  }
-}
+  const ratingThresholds = [];
+  const currentTime = new Date();
 
-async function handleProcessCampaign(job) {
-  try {
-    const { id }: ProcessCampaignData = job.data;
-    let { delay }: ProcessCampaignData = job.data;
-    const campaign = await getCampaign(id);
-    const settings = await getSettings(campaign);
-    if (campaign) {
-      const { contacts } = campaign.contactList;
-      const messages = getCampaignValidMessages(campaign);
-      const confirmationMessages = campaign.confirmation
-        ? getCampaignValidConfirmationMessages(campaign)
-        : null;
-      if (isArray(contacts)) {
-        let index = 0;
-        contacts.forEach(contact => {
-          prepareContact(
-            campaign,
-            settings.variables,
-            contact,
-            delay,
-            messages,
-            confirmationMessages
-          ).then(() => {
-            logger.info(
-              `Registro enviado pra fila de disparo: Campanha=${campaign.id};Contato=${contact.name};Delay=${delay}`
-            );
-          });
+  // eslint-disable-next-line no-restricted-syntax
+  for await (const tracking of openTrackingRatings) {
+    if (!ratingThresholds[tracking.companyId]) {
+      const timeout =
+        parseInt(
+          await GetCompanySetting(tracking.companyId, "ratingsTimeout", "5"),
+          10
+        ) || 5;
 
-          index += 1;
-          if (index % settings.longerIntervalAfter === 0) {
-            // intervalo maior após intervalo configurado de mensagens
-            delay += parseToMilliseconds(settings.greaterInterval);
-          } else {
-            delay += parseToMilliseconds(
-              randomValue(0, settings.messageInterval)
-            );
-          }
-        });
-        await campaign.update({ status: "EM_ANDAMENTO" });
-      }
+      ratingThresholds[tracking.companyId] = subMinutes(currentTime, timeout);
     }
-  } catch (err: unknown) {
-    Sentry.captureException(err);
+    if (tracking.ratingAt < ratingThresholds[tracking.companyId]) {
+      await setRatingExpired(tracking, ratingThresholds[tracking.companyId]);
+    }
   }
 }
 
-async function handleDispatchCampaign(job) {
-  try {
-    const { data } = job;
-    const { campaignShippingId, campaignId }: DispatchCampaignData = data;
-    const campaign = await Campaign.findByPk(campaignId, {
-      include: ["contactList", { model: Whatsapp, as: "whatsapp" }]
+async function handleNoQueueTimeout(
+  company: Company,
+  timeout: number,
+  action: number
+) {
+  logger.trace(
+    {
+      timeout,
+      action,
+      companyId: company?.id
+    },
+    "handleNoQueueTimeout: entering"
+  );
+
+  if (action) {
+    const queue = await QueueModel.findOne({
+      where: {
+        companyId: company.id,
+        id: action
+      }
     });
 
-    if (!campaign) {
-      logger.error({ data }, "Campaign not found");
+    if (!queue) {
+      const removed = await Setting.destroy({
+        where: {
+          companyId: company.id,
+          key: {
+            [Op.like]: "noQueueTimeout%"
+          }
+        }
+      });
+      logger.info(
+        { companyId: company.id, action, removed },
+        "handleNoQueueTimeout -> removed incorrect setting"
+      );
       return;
     }
+  }
 
-    const wbot = await GetWhatsappWbot(campaign.whatsapp);
+  const groupsTab =
+    (await GetCompanySetting(company.id, "groupsTab", "disabled")) ===
+    "enabled";
 
-    logger.info(
-      `Disparo de campanha solicitado: Campanha=${campaignId};Registro=${campaignShippingId}`
-    );
-
-    const campaignShipping = await CampaignShipping.findByPk(
-      campaignShippingId,
-      {
-        include: [{ model: ContactListItem, as: "contact" }]
-      }
-    );
-
-    const chatId = `${campaignShipping.number}@s.whatsapp.net`;
-
-    if (campaign.confirmation && campaignShipping.confirmation === null) {
-      await wbot.sendMessage(chatId, {
-        text: campaignShipping.confirmationMessage
-      });
-      await campaignShipping.update({ confirmationRequestedAt: moment() });
-    } else {
-      await wbot.sendMessage(chatId, {
-        text: campaignShipping.message
-      });
-      if (campaign.mediaPath) {
-        const filePath = path.resolve("public", campaign.mediaPath);
-        const options = await getMessageOptions(campaign.mediaName, filePath);
-        if (Object.keys(options).length) {
-          await wbot.sendMessage(chatId, { ...options });
-        }
-      }
-      await campaignShipping.update({ deliveredAt: moment() });
+  const where: WhereOptions<Ticket> = {
+    status: "pending",
+    companyId: company.id,
+    queueId: null,
+    updatedAt: {
+      [Op.lt]: subMinutes(new Date(), timeout)
     }
+  };
 
-    await verifyAndFinalizeCampaign(campaign);
+  if (groupsTab) {
+    where.isGroup = false;
+  }
 
-    const io = getIO();
-    io.emit(`company-${campaign.companyId}-campaign`, {
-      action: "update",
-      record: campaign
+  const tickets = await Ticket.findAll({ where });
+
+  logger.debug(
+    { expiredCount: tickets.length },
+    "handleNoQueueTimeout -> tickets"
+  );
+
+  const status = action ? "pending" : "closed";
+  const queueId = action || null;
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const ticket of tickets) {
+    logger.trace(
+      { ticket: ticket.id, userId: ticket.userId, status, queueId },
+      "handleNoQueueTimeout -> UpdateTicketService"
+    );
+    const userId = status === "pending" ? null : ticket.userId;
+    // eslint-disable-next-line no-await-in-loop
+    await UpdateTicketService({
+      ticketId: ticket.id,
+      ticketData: { status, userId, queueId },
+      companyId: company.id
+    });
+  }
+
+  logger.trace(
+    {
+      timeout,
+      action,
+      companyId: company?.id
+    },
+    "handleNoQueueTimeout: exiting"
+  );
+}
+
+async function handleChatbotTicketTimeout(
+  company: Company,
+  timeout: number,
+  action: number
+) {
+  logger.trace(
+    {
+      timeout,
+      action,
+      companyId: company?.id
+    },
+    "handleChatbotTicketTimeout: entering"
+  );
+
+  if (action) {
+    const queue = await QueueModel.findOne({
+      where: {
+        companyId: company.id,
+        id: action
+      }
     });
 
-    logger.info(
-      `Campanha enviada para: Campanha=${campaignId};Contato=${campaignShipping.contact.name}`
+    if (!queue) {
+      const removed = await Setting.destroy({
+        where: {
+          companyId: company.id,
+          key: {
+            [Op.like]: "chatbotTicketTimeout%"
+          }
+        }
+      });
+      logger.info(
+        { companyId: company.id, action, removed },
+        "handleChatbotTicketTimeout -> removed incorrect setting"
+      );
+      return;
+    }
+  }
+
+  const where: WhereOptions<Ticket> = {
+    status: "pending",
+    companyId: company.id,
+    isGroup: false,
+    chatbot: true,
+    updatedAt: {
+      [Op.lt]: subMinutes(new Date(), timeout)
+    }
+  };
+
+  if (action) {
+    where.queueId = {
+      [Op.or]: [{ [Op.ne]: action }, { [Op.is]: null }]
+    };
+  }
+
+  const tickets = await Ticket.findAll({ where });
+
+  logger.debug(
+    { expiredCount: tickets.length },
+    "handleChatbotTicketTimeout -> tickets"
+  );
+
+  const ticketData: any = {
+    status: action ? "pending" : "closed"
+  };
+
+  if (action) {
+    ticketData.queueId = action;
+  }
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const ticket of tickets) {
+    logger.trace(
+      { ...ticketData },
+      "handleChatbotTicketTimeout -> UpdateTicketService"
     );
-  } catch (err: unknown) {
-    Sentry.captureException(err);
-    logger.error((err as Error).message);
+    // eslint-disable-next-line no-await-in-loop
+    await UpdateTicketService({
+      ticketId: ticket.id,
+      ticketData,
+      companyId: company.id
+    });
+  }
+
+  logger.trace(
+    {
+      timeout,
+      action,
+      companyId: company?.id
+    },
+    "handleChatbotTicketTimeout: exiting"
+  );
+}
+
+async function handleOpenTicketTimeout(
+  company: Company,
+  timeout: number,
+  status: string
+) {
+  logger.trace(
+    {
+      timeout,
+      status,
+      companyId: company?.id
+    },
+    "handleOpenTicketTimeout"
+  );
+  const tickets = await Ticket.findAll({
+    where: {
+      status: "open",
+      companyId: company.id,
+      updatedAt: {
+        [Op.lt]: subMinutes(new Date(), timeout)
+      }
+    }
+  });
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const ticket of tickets) {
+    // eslint-disable-next-line no-await-in-loop
+    await UpdateTicketService({
+      ticketId: ticket.id,
+      ticketData: {
+        status,
+        queueId: ticket.queueId,
+        userId: status !== "pending" ? ticket.userId : null
+      },
+      companyId: company.id
+    });
   }
 }
 
-async function handleLoginStatus() {
-  const users: { id: number }[] = await sequelize.query(
-    'select id from "Users" where "updatedAt" < now() - \'5 minutes\'::interval and online = true',
-    { type: QueryTypes.SELECT }
-  );
-  users.forEach(async item => {
-    try {
-      const user = await User.findByPk(item.id);
-      await user.update({ online: false });
-      logger.info(`Usuário passado para offline: ${item.id}`);
-    } catch (e: unknown) {
-      Sentry.captureException(e);
+async function handleTicketTimeouts() {
+  logger.trace("handleTicketTimeouts");
+  const companies = await Company.findAll();
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const company of companies) {
+    logger.trace({ companyId: company?.id }, "handleTicketTimeouts -> company");
+    const noQueueTimeout = Number(
+      // eslint-disable-next-line no-await-in-loop
+      await GetCompanySetting(company.id, "noQueueTimeout", "0")
+    );
+    if (noQueueTimeout) {
+      const noQueueTimeoutAction = Number(
+        // eslint-disable-next-line no-await-in-loop
+        await GetCompanySetting(company.id, "noQueueTimeoutAction", "0")
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await handleNoQueueTimeout(
+        company,
+        noQueueTimeout,
+        noQueueTimeoutAction || 0
+      );
     }
-  });
+    const openTicketTimeout = Number(
+      // eslint-disable-next-line no-await-in-loop
+      await GetCompanySetting(company.id, "openTicketTimeout", "0")
+    );
+    if (openTicketTimeout) {
+      // eslint-disable-next-line no-await-in-loop
+      const openTicketTimeoutAction = await GetCompanySetting(
+        company.id,
+        "openTicketTimeoutAction",
+        "pending"
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await handleOpenTicketTimeout(
+        company,
+        openTicketTimeout,
+        openTicketTimeoutAction
+      );
+    }
+    const chatbotTicketTimeout = Number(
+      // eslint-disable-next-line no-await-in-loop
+      await GetCompanySetting(company.id, "chatbotTicketTimeout", "0")
+    );
+    if (chatbotTicketTimeout) {
+      const chatbotTicketTimeoutAction =
+        Number(
+          // eslint-disable-next-line no-await-in-loop
+          await GetCompanySetting(company.id, "chatbotTicketTimeoutAction", "0")
+        ) || 0;
+      // eslint-disable-next-line no-await-in-loop
+      await handleChatbotTicketTimeout(
+        company,
+        chatbotTicketTimeout,
+        chatbotTicketTimeoutAction
+      );
+    }
+  }
+}
+
+async function handleEveryMinute() {
+  logger.trace("handleEveryMinute: entering");
+  try {
+    await handleRatingsTimeout();
+    await handleTicketTimeouts();
+    logger.trace("handleEveryMinute: exiting");
+  } catch (e: unknown) {
+    logger.error(`handleEveryMinute: error received: ${(e as Error).message}`);
+  }
 }
 
 const createInvoices = new CronJob("0 * * * * *", async () => {
@@ -640,21 +595,17 @@ createInvoices.start();
 export async function startQueueProcess() {
   logger.info("Iniciando processamento de filas");
 
+  startCampaignQueues().then(() => {
+    logger.info("Campaign processing functions started");
+  });
+
   messageQueue.process("SendMessage", handleSendMessage);
 
   scheduleMonitor.process("Verify", handleVerifySchedules);
 
   sendScheduledMessages.process("SendMessage", handleSendScheduledMessage);
 
-  campaignQueue.process("VerifyCampaignsDaatabase", handleVerifyCampaigns);
-
-  campaignQueue.process("ProcessCampaign", handleProcessCampaign);
-
-  campaignQueue.process("DispatchCampaign", handleDispatchCampaign);
-
-  userMonitor.process("VerifyLoginStatus", handleLoginStatus);
-
-  campaignQueue.process("DispatchConfirmedCampaign", handleDispatchCampaign);
+  userMonitor.process("EveryMinute", handleEveryMinute);
 
   scheduleMonitor.add(
     "Verify",
@@ -665,17 +616,8 @@ export async function startQueueProcess() {
     }
   );
 
-  campaignQueue.add(
-    "VerifyCampaignsDaatabase",
-    {},
-    {
-      repeat: { cron: "*/20 * * * * *" },
-      removeOnComplete: true
-    }
-  );
-
   userMonitor.add(
-    "VerifyLoginStatus",
+    "EveryMinute",
     {},
     {
       repeat: { cron: "* * * * *" },

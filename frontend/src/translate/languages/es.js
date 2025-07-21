@@ -3,6 +3,7 @@ const messages = {
     translations: {
       common: {
         search: "Buscar",
+        filter: "Filtrar",
         edit: "Editar",
         delete: "Eliminar",
         cancel: "Cancelar",
@@ -26,7 +27,12 @@ const messages = {
         copy: "Copiar",
         paste: "Pegar",
         proceed: "Proceder",
-      },      
+        enabled: "Activado",
+        disabled: "Desactivado",
+        noqueue: "Sin cola",
+        rating: "Calificación",
+        transferTo: "Transferir a",
+      },
       signup: {
         title: "Registrarse",
         toasts: {
@@ -71,10 +77,31 @@ const messages = {
         token: "Token",
       },
       dashboard: {
-        charts: {
-          perDay: {
-            title: "Atenciones hoy: ",
-          },
+        usersOnline: "Usuarios en línea",
+        ticketsOpen: "Atenciones abiertas",
+        ticketsDone: "Atenciones resueltas",
+        totalTickets: "Total de atenciones",
+        newContacts: "Nuevos contactos",
+        avgServiceTime: "Tiempo promedio de atención",
+        avgWaitTime: "Tiempo promedio de espera",
+        ticketsOnPeriod: "Atenciones en el período",
+        userCurrentStatus: "Estado (Actual)",
+        filter: {
+          period: "Período",
+          custom: "Personalizado",
+          last3days: "Últimos 3 días",
+          last7days: "Últimos 7 días",
+          last14days: "Últimos 14 días",
+          last30days: "Últimos 30 días",
+          last90days: "Últimos 90 días"
+        },
+        date: {
+          start: "Fecha de inicio",
+          end: "Fecha de fin",
+        },
+        ticketCountersLabels: {
+          created: "Creado",
+          closed: "Cerrado",
         },
       },
       connections: {
@@ -714,7 +741,8 @@ const messages = {
         table: {
           name: "Nombre",
           color: "Color",
-          tickets: "Registros",
+          tickets: "Atenciones",
+          contacts: "Contactos",
           actions: "Acciones",
           id: "ID",
           kanban: "Kanban",
@@ -743,11 +771,15 @@ const messages = {
           officeHours: "Horas de oficina",
           groups: "Grupos",
           confidenciality: "Confidencialidad",
+          api: "API",
+          externalServices: "Servicios externos",
           serveradmin: "Administración del servidor",
         },
         success: "Configuraciones guardadas exitosamente.",
         copiedToClipboard: "Copiado al portapapeles",
         title: "Configuraciones",
+        chatbotTicketTimeout: "Tiempo de espera del ticket del chatbot (minutos)",
+        chatbotTicketTimeoutAction: "Acción después del tiempo de espera",
         settings: {
           userCreation: {
             name: "Creación de usuario",
@@ -814,6 +846,13 @@ const messages = {
             disabled: "Desactivado",
           },
         },
+        ShowNumericEmoticons: {
+          title: "Mostrar emojis numéricos en la cola",
+          options: {
+            enabled: "Activado",
+            disabled: "Desactivado",
+          },
+        },
         QuickMessages: {
           title: "Respuestas rápidas",
           options: {
@@ -827,6 +866,9 @@ const messages = {
             enabled: "Activado",
             disabled: "Desactivado",
           },
+        },
+        FileUploadLimit: {
+          title: "Límite de carga de archivos (MB)",
         },
         FileDownloadLimit: {
           title: "Límite de descarga de archivos (MB)",
@@ -844,6 +886,20 @@ const messages = {
             enabled: "Activado",
             disabled: "Desactivado",
           }
+        },
+        GracePeriod: {
+          title: "Período de gracia después del vencimiento (días)",
+        },
+        "ticketAcceptedMessage": {
+          "title": "Mensaje de ticket aceptado",
+          "placeholder": "Ingrese su mensaje de ticket aceptado aquí"
+        },
+        "transferMessage": {
+          "title": "Mensaje de transferencia",
+          "placeholder": "Ingrese su mensaje de transferencia aquí"
+        },
+        "mustacheVariables": {
+          "title": "Variables disponibles:",
         },
         WelcomeGreeting: {
           greetings: "hola",
@@ -870,6 +926,20 @@ const messages = {
         },
         PaymentGateways: {
           title: "Payment gateways",
+        },
+        AIProvider: {
+          title: "Proveedor de IA",
+        },
+        AudioTranscriptions: {
+          title: "Transcripciones de audio",
+        },
+        TagsMode: {
+          title: "Modo de etiquetas",
+          options: {
+            ticket: "Ticket",
+            contact: "Contacto",
+            both: "Ticket y contacto",
+          },
         },
       },
       messagesList: {

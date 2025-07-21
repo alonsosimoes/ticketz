@@ -7,21 +7,38 @@ interface ExtraInfo extends ContactCustomField {
   value: string;
 }
 
-interface Request {
-  name: string;
-  number: string;
-  isGroup: boolean;
+interface ContactData {
+  name?: string;
+  number?: string;
+  isGroup?: boolean;
   email?: string;
   profilePicUrl?: string;
-  companyId: number;
+  companyId?: number;
   extraInfo?: ExtraInfo[];
   channel?: string;
   disableBot?: boolean;
 }
 
+export const updateContact = async (
+  contact: Contact,
+  contactData: ContactData
+) => {
+  await contact.update(contactData);
+
+  const io = getIO();
+  io.to(`company-${contact.companyId}-mainchannel`).emit(
+    `company-${contact.companyId}-contact`,
+    {
+      action: "update",
+      contact
+    }
+  );
+  return contact;
+};
+
 const CreateOrUpdateContactService = async ({
   name,
-  number: rawNumber,
+  number,
   profilePicUrl,
   isGroup,
   email = "",
@@ -29,9 +46,7 @@ const CreateOrUpdateContactService = async ({
   extraInfo = [],
   channel = "whatsapp",
   disableBot = false
-}: Request): Promise<Contact> => {
-  const number = isGroup ? rawNumber : rawNumber.replace(/[^0-9]/g, "");
-
+}: ContactData): Promise<Contact> => {
   const io = getIO();
   let contact: Contact | null;
 
@@ -48,6 +63,10 @@ const CreateOrUpdateContactService = async ({
       disableBot
     });
 
+    await contact.reload({
+      include: ["tags", "extraInfo"]
+    });
+
     io.to(`company-${companyId}-mainchannel`).emit(
       `company-${companyId}-contact`,
       {
@@ -61,19 +80,12 @@ const CreateOrUpdateContactService = async ({
         where: {
           number,
           companyId
-        }
+        },
+        include: ["tags", "extraInfo"]
       });
 
       if (contact) {
-        contact.update({ profilePicUrl });
-
-        io.to(`company-${companyId}-mainchannel`).emit(
-          `company-${companyId}-contact`,
-          {
-            action: "update",
-            contact
-          }
-        );
+        updateContact(contact, { profilePicUrl });
       }
     } else {
       console.error("Error creating contact:", createError);

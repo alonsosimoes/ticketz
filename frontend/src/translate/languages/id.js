@@ -839,6 +839,13 @@ const messages = {
             disabled: "Dinonaktifkan",
           },
         },
+        ShowNumericEmoticons: {
+          title: "Menampilkan emoji numerik dalam antrean",
+          options: {
+            enabled: "Diaktifkan",
+            disabled: "Dinonaktifkan",
+          },
+        },
         QuickMessages: {
           title: "Pesan cepat",
           options: {
@@ -869,6 +876,20 @@ const messages = {
             enabled: "Diaktifkan",
             disabled: "Dinonaktifkan",
           }
+        },
+        GracePeriod: {
+          title: "Periode penundaan langganan berakhir (hari)",
+        },
+        "ticketAcceptedMessage": {
+          "title": "Pesan Tiket Diterima",
+          "placeholder": "Masukkan pesan tiket diterima di sini"
+        },
+        "transferMessage": {
+          "title": "Pesan Transfer",
+          "placeholder": "Masukkan pesan transfer di sini"
+        },
+        "mustacheVariables": {
+          "title": "Variabel yang tersedia:"
         },
         WelcomeGreeting: {
           greetings: "halo",

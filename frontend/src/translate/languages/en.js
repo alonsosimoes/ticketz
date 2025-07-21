@@ -3,6 +3,7 @@ const messages = {
     translations: {
       common: {
         search: "Search",
+        filter: "Filter",
         edit: "Edit",
         delete: "Delete",
         cancel: "Cancel",
@@ -26,6 +27,11 @@ const messages = {
         copy: "Copy",
         paste: "Paste",
         proceed: "Proceed",
+        enabled: "Enabled",
+        disabled: "Disabled",
+        noqueue: "No queue",
+        rating: "Rating",
+        transferTo: "Transfer to",
       },
       signup: {
         title: "Sign Up",
@@ -71,10 +77,32 @@ const messages = {
         token: "Token",
       },
       dashboard: {
-        charts: {
-          perDay: {
-            title: "Today's Interactions: ",
-          },
+        usersOnline: "Users online",
+        ticketsWaiting: "Tickets waiting",
+        ticketsOpen: "Open tickets",
+        ticketsDone: "Resolved tickets",
+        totalTickets: "Total tickets",
+        newContacts: "New contacts",
+        avgServiceTime: "Average service time",
+        avgWaitTime: "Average wait time",
+        ticketsOnPeriod: "Tickets in the period",
+        userCurrentStatus: "Current status",
+        filter: {
+          period: "Period",
+          custom: "Custom",
+          last3days: "Last 3 days",
+          last7days: "Last 7 days",
+          last14days: "Last 14 days",
+          last30days: "Last 30 days",
+          last90days: "Last 90 days"
+        },
+        date: {
+          start: "Start date",
+          end: "End date",
+        },
+        ticketCountersLabels: {
+          created: "Created",
+          closed: "Closed",
         },
       },
       connections: {
@@ -708,7 +736,8 @@ const messages = {
         table: {
           name: "Name",
           color: "Color",
-          tickets: "Records",
+          tickets: "Tickets",
+          contacts: "Contacts",
           actions: "Actions",
           id: "Id",
           kanban: "Kanban",
@@ -738,11 +767,14 @@ const messages = {
           groups: "Groups",
           confidenciality: "Confidentiality",
           api: "API",
+          externalServices: "External Services",
           serveradmin: "Server Administration",
         },
         success: "Setting saved successfully.",
         copiedToClipboard: "Copied to clipboard",
         title: "Settings",
+        chatbotTicketTimeout: "Chatbot ticket timeout (minutes)",
+        chatbotTicketTimeoutAction: "Action after chatbot timeout",
         settings: {
           userCreation: {
             name: "User creation",
@@ -809,6 +841,13 @@ const messages = {
             disabled: "disabled",
           },
         },
+        ShowNumericEmoticons: {
+          title: "Display numeric emojis in the queue",
+          options: {
+            enabled: "enabled",
+            disabled: "disabled",
+          },
+        },
         QuickMessages: {
           title: "Quick Messages",
           options: {
@@ -822,6 +861,9 @@ const messages = {
             enabled: "enabled",
             disabled: "disabled",
           },
+        },
+        FileUploadLimit: {
+          title: "File Upload Limit (MB)",
         },
         FileDownloadLimit: {
           title: "File Download Limit (MB)",
@@ -839,6 +881,20 @@ const messages = {
             "enabled": "Enabled",
             "disabled": "Disabled"
           }
+        },
+        GracePeriod: {
+          title: "Subscription Grace Period (days)",
+        },
+        "ticketAcceptedMessage": {
+          "title": "Ticket Accepted Message",
+          "placeholder": "Enter your ticket accepted message here"
+        },
+        "transferMessage": {
+          "title": "Transfer Message",
+          "placeholder": "Enter your transfer message here"
+        },
+        "mustacheVariables": {
+          "title": "Available variables:",
         },
         WelcomeGreeting: {
           greetings: "Hello",
@@ -865,6 +921,20 @@ const messages = {
         },
         PaymentGateways: {
           title: "Pasarelas de pago",
+        },
+        AIProvider: {
+          title: "AI Provider",
+        },
+        AudioTranscriptions: {
+          title: "Audio Transcriptions",
+        },
+        TagsMode: {
+          title: "Tags Mode",
+          options: {
+            ticket: "Ticket",
+            contact: "Contact",
+            both: "Ticket and Contact"
+          },
         },
       },
       messagesList: {
@@ -1017,7 +1087,7 @@ const messages = {
           country: "Country",
           phoneNumber: "Whatsapp Number",
           submit: "Register",
-        },        
+        },
         support: {
           title: "Support Ticketz project",
           mercadopagotitle: "Credit Card",

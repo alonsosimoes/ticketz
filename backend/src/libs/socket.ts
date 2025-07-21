@@ -44,7 +44,7 @@ import { instrument } from "@socket.io/admin-ui";
 import { Server } from "http";
 import { verify } from "jsonwebtoken";
 import AppError from "../errors/AppError";
-import { logger } from "../utils/logger";
+import { logger, setSocketIo, socketSendBuffer } from "../utils/logger";
 import User from "../models/User";
 import Queue from "../models/Queue";
 import Ticket from "../models/Ticket";
@@ -52,6 +52,9 @@ import authConfig from "../config/auth";
 import { CounterManager } from "./counter";
 import UserSocketSession from "../models/UserSocketSession";
 import { GetCompanySetting } from "../helpers/CheckSettings";
+import { DecoupledDriverServices } from "../services/DecoupledDriverServices/DecoupledDriverServices";
+
+const decoupledDriverServices = DecoupledDriverServices.getInstance();
 
 let io: SocketIO;
 
@@ -68,12 +71,18 @@ const joinTicketChannel = async (
   logger.debug(`joinChatbox[${c}]: Channel: ${ticketId} by user ${user.id}`);
 };
 
+const notifyOnlineChange = (companyId: number) => {
+  io.to("super").to(`company-${companyId}-admin`).emit("userOnlineChange");
+};
+
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     cors: {
       origin: process.env.FRONTEND_URL
     }
   });
+
+  setSocketIo(io);
 
   if (process.env.SOCKET_ADMIN && JSON.parse(process.env.SOCKET_ADMIN)) {
     User.findByPk(1).then(adminUser => {
@@ -114,7 +123,6 @@ export const initIO = (httpServer: Server): SocketIO => {
     if (userId && userId !== "undefined" && userId !== "null") {
       user = await User.findByPk(userId, { include: [Queue] });
       if (user) {
-        user.online = true;
         await user.save();
       } else {
         logger.info(`onConnect: User ${userId} not found`);
@@ -133,6 +141,7 @@ export const initIO = (httpServer: Server): SocketIO => {
       active: true
     }).then(_ => {
       logger.debug(`started session ${socket.id} for user ${userId}`);
+      notifyOnlineChange(user.companyId);
     });
 
     socket.on("disconnect", async () => {
@@ -141,6 +150,7 @@ export const initIO = (httpServer: Server): SocketIO => {
         { where: { id: socket.id } }
       ).then(() => {
         logger.debug(`finished session ${socket.id} for user ${userId}`);
+        notifyOnlineChange(user.companyId);
       });
     });
 
@@ -150,6 +160,55 @@ export const initIO = (httpServer: Server): SocketIO => {
     if (user.super) {
       socket.join("super");
     }
+
+    if (user.profile === "admin") {
+      socket.join(`company-${user.companyId}-admin`);
+    }
+
+    socket.on("joinBackendlog", () => {
+      if (user.super) {
+        socket.join("backendlog");
+        io.to("backendlog").emit("backendlog", {
+          timestamp: Date.now(),
+          level: 30,
+          logs: [
+            { currentLevel: logger.level },
+            "started transmission of backend logs"
+          ]
+        });
+        socketSendBuffer();
+      } else {
+        logger.info(`User ${user.id} tried to join superlog channel.`);
+      }
+    });
+
+    socket.on("leaveBackendlog", () => {
+      if (user.super) {
+        io.to("backendlog").emit("backendlog", {
+          timestamp: Date.now(),
+          level: 30,
+          logs: ["finished transmission of backend logs"]
+        });
+        socket.leave("backendlog");
+      } else {
+        logger.info(`User ${user.id} tried to leave superlog channel.`);
+      }
+    });
+
+    socket.on("setLoglevel", (level: string) => {
+      if (user.super) {
+        if (logger.level === level) return;
+
+        logger.level = level;
+        io.to("backendlog").emit("backendlog", {
+          timestamp: Date.now(),
+          level: 30,
+          logs: [`Log level changed to ${level}`]
+        });
+      } else {
+        logger.info(`User ${user.id} tried to set log level.`);
+      }
+    });
 
     socket.on("joinChatBox", async (ticketId: string) => {
       if (!ticketId || ticketId === "undefined") {
@@ -266,6 +325,14 @@ export const initIO = (httpServer: Server): SocketIO => {
             socket.leave(`queue-${queue.id}-pending`);
           });
         }
+      }
+    });
+
+    socket.on("presenceUpdate", async parameters => {
+      const df = decoupledDriverServices.getFunction("presenceUpdate");
+
+      if (df) {
+        df(user, parameters);
       }
     });
 

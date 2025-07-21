@@ -43,8 +43,8 @@ import type {
   AuthenticationCreds,
   AuthenticationState,
   SignalDataTypeMap
-} from "@whiskeysockets/baileys";
-import { BufferJSON, initAuthCreds, proto } from "@whiskeysockets/baileys";
+} from "baileys";
+import { BufferJSON, initAuthCreds, proto } from "baileys";
 import Whatsapp from "../models/Whatsapp";
 import BaileysKeys from "../models/BaileysKeys";
 import { logger } from "../utils/logger";
@@ -108,7 +108,7 @@ const authState = async (
     }
   };
 
-  if (whatsapp.session && whatsapp.session !== null) {
+  if (whatsapp.session) {
     const result = JSON.parse(whatsapp.session, BufferJSON.reviver);
     creds = result.creds;
     const { keys } = result;

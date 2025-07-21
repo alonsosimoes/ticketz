@@ -1,4 +1,12 @@
-import { Op, fn, where, col, Filterable, Includeable } from "sequelize";
+import {
+  Op,
+  fn,
+  where,
+  col,
+  Filterable,
+  Includeable,
+  WhereOptions
+} from "sequelize";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 
 import { intersection } from "lodash";
@@ -12,7 +20,7 @@ import Tag from "../../models/Tag";
 import TicketTag from "../../models/TicketTag";
 import Whatsapp from "../../models/Whatsapp";
 import { GetCompanySetting } from "../../helpers/CheckSettings";
-import TicketTraking from "../../models/TicketTraking";
+import ContactTag from "../../models/ContactTag";
 
 interface Request {
   isSearch?: boolean;
@@ -63,7 +71,7 @@ const ListTicketsService = async ({
 
   const user = await ShowUserService(userId);
 
-  const andedOrs = [
+  const andedOrs: WhereOptions<Ticket>[] = [
     {
       [Op.or]: [{ userId }, { status: "pending" }]
     }
@@ -85,6 +93,7 @@ const ListTicketsService = async ({
     {
       model: Contact,
       as: "contact",
+      include: ["tags", "extraInfo"],
       attributes: ["id", "name", "number", "email", "profilePicUrl", "presence"]
     },
     {
@@ -121,24 +130,6 @@ const ListTicketsService = async ({
   }
 
   if (status) {
-    includeCondition = [
-      ...includeCondition,
-      {
-        model: TicketTraking,
-        as: "ticketTraking",
-        attributes: ["id", "ratingAt", "rated"],
-        required: false
-      }
-    ];
-
-    // when status is requested, only list tickets that are not waiting for rating
-    andedOrs.push({
-      [Op.or]: [
-        { "$ticketTraking.ratingAt$": null },
-        { "$ticketTraking.rated$": true }
-      ] as any[]
-    });
-
     whereCondition = {
       ...whereCondition,
       status
@@ -227,6 +218,7 @@ const ListTicketsService = async ({
 
   if (Array.isArray(tags) && tags.length > 0) {
     const ticketsTagFilter: any[] | null = [];
+    const contactsTagFilter: any[] | null = [];
     // eslint-disable-next-line no-restricted-syntax
     for await (const tag of tags) {
       const ticketTags = await TicketTag.findAll({
@@ -235,16 +227,29 @@ const ListTicketsService = async ({
       if (ticketTags) {
         ticketsTagFilter.push(ticketTags.map(t => t.ticketId));
       }
+
+      const contactTags = await ContactTag.findAll({
+        where: { tagId: tag }
+      });
+
+      if (contactTags) {
+        contactsTagFilter.push(contactTags.map(c => c.contactId));
+      }
     }
 
     const ticketsIntersection: number[] = intersection(...ticketsTagFilter);
+    const contactsIntersection: number[] = intersection(...contactsTagFilter);
 
-    whereCondition = {
-      ...whereCondition,
-      id: {
-        [Op.in]: ticketsIntersection
-      }
-    };
+    andedOrs.push({
+      [Op.or]: [
+        {
+          id: { [Op.in]: ticketsIntersection }
+        },
+        {
+          contactId: { [Op.in]: contactsIntersection }
+        }
+      ]
+    });
   }
 
   if (Array.isArray(users) && users.length > 0) {
@@ -288,6 +293,7 @@ const ListTicketsService = async ({
     where: whereCondition,
     include: includeCondition,
     distinct: true,
+    col: "id",
     limit,
     offset,
     order: [["updatedAt", "DESC"]],

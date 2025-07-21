@@ -3,6 +3,7 @@ const messages = {
     translations: {
       common: {
         search: "Buscar",
+        filter: "Filtrar",
         edit: "Editar",
         delete: "Excluir",
         cancel: "Cancelar",
@@ -26,6 +27,11 @@ const messages = {
         copy: "Copiar",
         paste: "Colar",
         proceed: "Prosseguir",
+        enabled: "Ativado",
+        disabled: "Desativado",
+        noqueue: "Sem fila",
+        rating: "Avaliação",
+        transferTo: "Transferir para",
       },
       signup: {
         title: "Cadastre-se",
@@ -51,7 +57,7 @@ const messages = {
         },
         buttons: {
           submit: "Entrar",
-          register: "Não tem um conta? Cadastre-se!",
+          register: "Não tem uma conta? Cadastre-se!",
         },
       },
       companies: {
@@ -71,10 +77,32 @@ const messages = {
         token: "Token",
       },
       dashboard: {
-        charts: {
-          perDay: {
-            title: "Atendimentos hoje: ",
-          },
+        usersOnline: "Usuários online",
+        ticketsWaiting: "Atendimentos aguardando",
+        ticketsOpen: "Atendimentos abertos",
+        ticketsDone: "Atendimentos resolvidos",
+        totalTickets: "Total de atendimentos",
+        newContacts: "Novos contatos",
+        avgServiceTime: "Tempo médio de atendimento",
+        avgWaitTime: "Tempo médio de espera",
+        ticketsOnPeriod: "Atendimentos no período",
+        userCurrentStatus: "Status (Atual)",
+        filter: {
+          period: "Período",
+          custom: "Personalizado",
+          last3days: "Últimos 3 dias",
+          last7days: "Últimos 7 dias",
+          last14days: "Últimos 14 dias",
+          last30days: "Últimos 30 dias",
+          last90days: "Últimos 90 dias"
+        },
+        date: {
+          start: "Data inicial",
+          end: "Data final",
+        },
+        ticketCountersLabels: {
+          created: "Criado",
+          closed: "Fechado",
         },
       },
       connections: {
@@ -717,7 +745,8 @@ const messages = {
         table: {
           name: "Nome",
           color: "Cor",
-          tickets: "Registros",
+          tickets: "Tickets",
+          contacts: "Contatos",
           actions: "Ações",
           id: "Id",
           kanban: "Kanban",
@@ -747,11 +776,14 @@ const messages = {
           groups: "Grupos",
           confidenciality: "Confidencialidade",
           api: "API",
+          externalServices: "Serviços externos",
           serveradmin: "Administração do servidor",
         },
         success: "Configurações salvas com sucesso.",
         copiedToClipboard: "Copiado para a área de transferência",
         title: "Configurações",
+        chatbotTicketTimeout: "Timeout do chatbot (minutos)",
+        chatbotTicketTimeoutAction: "Ação do timeout do chatbot",
         settings: {
           userCreation: {
             name: "Criação de usuário",
@@ -818,6 +850,13 @@ const messages = {
             disabled: "Desativado",
           },
         },
+        ShowNumericEmoticons: {
+          title: "Exibir emojis numéricos na fila",
+          options: {
+            enabled: "Activado",
+            disabled: "Desativado",
+          },
+        },
         QuickMessages: {
           title: "Mensagens Rápidas",
           options: {
@@ -831,6 +870,9 @@ const messages = {
             enabled: "Ativado",
             disabled: "Desativado",
           },
+        },
+        FileUploadLimit: {
+          title: "Limite de Upload de arquivos (MB)",
         },
         FileDownloadLimit: {
           title: "Limite de Download de arquivos (MB)",
@@ -848,6 +890,20 @@ const messages = {
             "enabled": "Ativado",
             "disabled": "Desativado"
           }
+        },
+        GracePeriod: {
+          title: "Carência após vencimento (dias)",
+        },
+        "ticketAcceptedMessage": {
+          "title": "Mensagem de ticket aceito",
+          "placeholder": "Digite sua mensagem de ticket aceito aqui"
+        },
+        "transferMessage": {
+          "title": "Mensagem de transferência",
+          "placeholder": "Digite sua mensagem de transferência aqui"
+        },
+        "mustacheVariables": {
+          "title": "Variáveis disponíveis:"
         },
         WelcomeGreeting: {
           greetings: "Olá",
@@ -874,6 +930,20 @@ const messages = {
         },
         PaymentGateways: {
           title: "Payment gateways",
+        },
+        AIProvider: {
+          title: "Serviço de IA",
+        },
+        AudioTranscriptions: {
+          title: "Transcrição de áudio",
+        },        
+        TagsMode: {
+          title: "Modo de Tags",
+          options: {
+            ticket: "Ticket",
+            contact: "Contato",
+            both: "Ticket e Contacto"
+          },
         },
       },
       messagesList: {

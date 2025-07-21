@@ -103,6 +103,14 @@ class ManagedSocket {
     }
     this.callbacks = [];
   }
+  
+  logout() {
+    this.disconnect();
+    this.socketManager.currentSocket = null;
+    this.socketManager.currentCompanyId = -1;
+    this.socketManager.currentUserId = -1;
+    this.socketManager.socketReady = false;
+  }
 }
 
 class DummySocket {
@@ -110,6 +118,7 @@ class DummySocket {
   off(..._) {}
   emit(..._) {}
   disconnect() {}
+  logout() {}
 }
 
 const socketManager = {
@@ -193,6 +202,9 @@ const socketManager = {
       })
       
       this.currentSocket.onAny((event, ...args) => {
+        if (event === "backendlog") {
+          return;
+        }
         console.debug("Event: ", { socket: this.currentSocket, event, args });
       });
       
