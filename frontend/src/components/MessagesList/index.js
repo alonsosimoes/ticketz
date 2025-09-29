@@ -875,6 +875,24 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, allowReplyButtons
     }
   };
 
+  const renderNumberTicket = (message, index) => {
+    if (index < messagesList.length && index > 0) {
+      
+      let messageTicket = message.ticketId;
+      let previousMessageTicket = messagesList[index - 1].ticketId;
+      let previousMessageTicketQueue = messagesList[index - 1].queue?.name;
+
+      if (messageTicket !== previousMessageTicket) {
+        return (
+          <div key={`ticket-${message.id}`} className={classes.ticketNunber}>
+            #ticket: {messageTicket} | {previousMessageTicketQueue}
+            <hr />
+          </div>
+        );
+      }
+    }
+  };
+  
   const renderMessageDivider = (message, index) => {
     if (index < messagesList.length && index > 0) {
       let messageUser = messagesList[index].fromMe;
@@ -950,11 +968,15 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, allowReplyButtons
   };
 
   const renderReplies = (replies) => {
-    const reactions = replies &&
-      replies.filter(
-        (reply) => reply?.mediaType === "reactionMessage"
-      ).map((reply) => {
-        return (
+    // const reactions = replies &&
+    //   replies.filter(
+    //     (reply) => reply?.mediaType === "reactionMessage"
+    //   ).map((reply) => {
+    //     return (
+    const reactions = replies && replies.map((reply) => {
+      return (
+        reply?.mediaType === "reactionMessage" &&
+        (
           reply.contact?.name ?
             <Tooltip title={reply.contact?.name} placement="top" arrow >
               <div
@@ -970,7 +992,9 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, allowReplyButtons
               {reply.body}
             </div>
         )
-      });
+      // });
+      );
+    });
 
     return (
       reactions?.length > 0 && <div className={classes.reactionsContainer}>
@@ -1272,6 +1296,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, allowReplyButtons
         return (
           <React.Fragment key={message.id}>
             {renderDailyTimestamps(message, index)}
+            {renderNumberTicket(message, index)}
             {renderMessageDivider(message, index)}
             <div id={message.id}
               className={[clsx(classes.messageContainer, classes.messageLeft, {
