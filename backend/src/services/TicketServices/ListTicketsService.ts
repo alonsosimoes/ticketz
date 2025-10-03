@@ -118,7 +118,7 @@ const ListTicketsService = async ({
     }
   ];
 
-  if (showAll === "true" && user.profile === "admin") {
+  if (showAll === "true") {
     andedOrs.length = 0;
     whereCondition = {
       [Op.and]: andedOrs,
