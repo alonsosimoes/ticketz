@@ -91,7 +91,7 @@ const ListMessagesService = async ({
   // }
 
   const { count, rows: messages } = await Message.findAndCountAll({
-    //...options,
+    ...options,
     limit,
     include: [
       "contact",
