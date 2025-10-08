@@ -42,7 +42,7 @@ contend:{minWidth: 300,maxWidth: 500,},
 function AnnouncementDialog({ announcement, open, handleClose }) {
  const classes=useStyles()
   const getMediaPath = (filename) => {
-    return `${getBackendURL()}}/public/${filename}`;
+    return `${getBackendURL()}/public/${filename}`;
   };
   return (
     <Dialog
