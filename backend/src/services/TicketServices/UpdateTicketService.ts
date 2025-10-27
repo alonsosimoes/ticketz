@@ -175,17 +175,21 @@ const UpdateTicketService = async ({
 
       if (
         userRatingSetting === "enabled" &&
+        ticket.whatsapp?.status === "CONNECTED" &&
         ticket.userId &&
         !isGroup &&
         !ticket.contact.disableBot
       ) {
         if (!ticketTraking.ratingAt && !justClose) {
-          if (ticket.whatsapp && ticket.channel === "whatsapp") {
+          if (ticket.channel === "whatsapp") {
             const ratingTxt =
               ticket.whatsapp.ratingMessage?.trim() ||
               _t("Please rate our service", ticket);
             const rateInstructions = _t("Send a rating from 1 to 5", ticket);
-            const rateReturn = _t("Send *`!`* to return to the service", ticket);
+            const rateReturn = _t(
+              "Send *`!`* to return to the service",
+              ticket
+            );
             const bodyRatingMessage = `${ratingTxt}\n\n*${rateInstructions}*\n\n${rateReturn}`;
 
             await SendWhatsAppMessage({ body: bodyRatingMessage, ticket });
@@ -362,7 +366,7 @@ const UpdateTicketService = async ({
           ""
         );
 
-        if (acceptedMessage) {
+        if (acceptedMessage && ticket.whatsapp?.status === "CONNECTED") {
           const acceptUser = await User.findByPk(userId);
           await sendFormattedMessage(acceptedMessage, ticket, acceptUser);
           accepted = true;
@@ -374,7 +378,7 @@ const UpdateTicketService = async ({
         oldQueueId &&
         ticket.queueId &&
         oldQueueId !== ticket.queueId &&
-        ticket.whatsapp
+        ticket.whatsapp?.status === "CONNECTED"
       ) {
         const systemTransferMessage = await GetCompanySetting(
           companyId,
@@ -412,11 +416,14 @@ const UpdateTicketService = async ({
 
     return { ticket, oldStatus, oldUserId };
   } catch (err) {
-    logger.error({ message: err?.message }, "UpdateTicketService");
+    logger.error(
+      { error: err?.name, message: err?.message, stack: err?.stack },
+      "UpdateTicketService"
+    );
     if (err instanceof AppError) {
       throw err;
     }
-    throw new AppError("Error updating ticket", 500, err);
+    throw new AppError("Error updating ticket", 500);
   }
 };
 
