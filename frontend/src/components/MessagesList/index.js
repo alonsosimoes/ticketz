@@ -60,7 +60,7 @@ const useStyles = makeStyles((theme) => ({
     "& span.ticketzMention": {
       color: theme.palette.primary.main,
       fontWeight: "bold",
-      // cursor: "pointer",
+      cursor: "pointer",
     },
     marginBottom: 5,
   },
@@ -223,6 +223,7 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     color: "#6bcbef",
     fontWeight: 500,
+    cursor: "pointer",
   },
   
   forwardedMessage: {
@@ -1177,6 +1178,19 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, allowReplyButtons
     return data;
   };
 
+  const handleContactClick = (name, number) => {
+    api.post(`/contacts/findOrInsert`, {
+      name,
+      number
+    }).then((response) => {
+      if (response?.data?.id) {
+        window.mentionClick(response.data);
+      }
+    }).catch((err) => {
+      toastError(err);
+    });
+  };
+  
   const renderVCard = (vcardJson) => {
     const cardArray = JSON.parse(vcardJson)?.ticketzvCard;
     
@@ -1236,32 +1250,12 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, allowReplyButtons
                   color="textPrimary"
                   style={{ display: 'flex' }}
                 >
-                  {number}
+                  <span class="ticketzMention" onClick={() => handleContactClick(name, metaNumber)}>{number}</span>
                 </Typography>
               </div>
 
             </div>
 
-          </div>
-          <div style={{
-            width: '100%', display: 'none',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginTop: 20,
-            borderWidth: '1px 0 0 0',
-            borderTopColor: '#bdbdbd',
-            borderStyle: 'solid',
-            padding: 8
-          }}>
-            <Typography
-              noWrap
-              component="h4"
-              variant="body2"
-              color="textPrimary"
-              style={{ fontWeight: '700', color: '#2c9ce7' }}
-            >
-              Conversar
-            </Typography>
           </div>
         </div>
       )
@@ -1379,7 +1373,13 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, allowReplyButtons
                 </span>
               )}
               {isGroup && (
-                <span className={classes.messageContactName}>
+                <span className={classes.messageContactName} onClick={() => {
+                  window.mentionClick({
+                    contactId: message.contact?.id,
+                    name: message.contact?.name,
+                    number: message.contact?.number
+                  })
+                }}>
                   {message.contact?.name}
                 </span>
               )}

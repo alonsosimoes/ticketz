@@ -14,6 +14,7 @@ const upload = multer(uploadConfig);
 contactRoutes.post(
   "/contacts/import",
   isAuth,
+  isAdmin,
   ImportPhoneContactsController.store
 );
 
@@ -46,6 +47,13 @@ contactRoutes.get(
   apiTokenAuth,
   isAuth,
   ContactController.show
+);
+
+contactRoutes.post(
+  "/contacts/findOrInsert",
+  apiTokenAuth,
+  isAuth,
+  ContactController.findOrInsertContact
 );
 
 contactRoutes.post("/contacts", apiTokenAuth, isAuth, ContactController.store);
