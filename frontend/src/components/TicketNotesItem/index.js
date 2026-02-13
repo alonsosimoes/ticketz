@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import IconButton from '@material-ui/core/IconButton';
 import ListItem from '@material-ui/core/ListItem';
@@ -17,7 +16,7 @@ const useStyles = makeStyles((theme) => ({
     }
 }));
 
-export default function ContactNotesDialogListItem (props) {
+export default function TicketNotesItem (props) {
     const { note, deleteItem } = props;
     const classes = useStyles();
 
@@ -28,7 +27,7 @@ export default function ContactNotesDialogListItem (props) {
     return (
         <ListItem alignItems="flex-start">
             <ListItemAvatar>
-                <Avatar alt={note.user.name} src="/static/images/avatar/1.jpg" />
+                <Avatar alt={note.user?.name || ""} src="/static/images/avatar/1.jpg" />
             </ListItemAvatar>
             <ListItemText
                 primary={
@@ -45,7 +44,7 @@ export default function ContactNotesDialogListItem (props) {
                 }
                 secondary={
                     <>
-                        {note.user.name}, {moment(note.createdAt).format('DD/MM/YY HH:mm')}
+                        {note.user?.name || "---"}, {moment(note.createdAt).format('DD/MM/YY HH:mm')}
                     </>
                 }
             />
@@ -58,7 +57,7 @@ export default function ContactNotesDialogListItem (props) {
     )   
 }
 
-ContactNotesDialogListItem.propTypes = {
+TicketNotesItem.propTypes = {
     note: PropTypes.object.isRequired,
     deleteItem: PropTypes.func.isRequired
 }

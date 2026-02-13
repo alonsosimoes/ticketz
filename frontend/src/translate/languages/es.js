@@ -1,6 +1,9 @@
 const messages = {
   es: {
     translations: {
+      date: {
+        yesterday: "Ayer",
+      },
       common: {
         search: "Buscar",
         filter: "Filtrar",
@@ -9,6 +12,8 @@ const messages = {
         cancel: "Cancelar",
         save: "Guardar",
         confirm: "Confirmar",
+        confirmation: "Confirmación",
+        areyousure: "¿Estás seguro?",
         close: "Cerrar",
         closed: "Cerrado",
         error: "Error",
@@ -961,6 +966,7 @@ const messages = {
         },
         schedules: {
           title: "horarios",
+          updateToNewFormat: "Actualizar al nuevo formato",
         },
         Plans: {
           title: "Planes",
@@ -1034,9 +1040,8 @@ const messages = {
         schedule: "Agendamiento",
         delete: "Eliminar",
         transfer: "Transferir",
-        registerAppointment: "Observaciones del Contacto",
         appointmentsModal: {
-          title: "Observaciones del Contacto",
+          title: "Observaciones del Ticket",
           textarea: "Observación",
           placeholder: "Ingrese aquí la información que desea registrar",
         },
@@ -1165,6 +1170,58 @@ const messages = {
         title: "Ingrese el token de su conexión en Wavoip",
         instructions: "Accediendo a la siguiente dirección puede crear una cuenta con 50 llamadas gratuitas para prueba",
         coupon: "¡Al contratar el servicio use el cupón TICKETZ para ganar un descuento!",
+      },
+      openHours: {
+        title: "Horarios de Atención",
+        timezone: {
+          placeholder: "Seleccione la zona horaria",
+          searchPlaceholder: "Escribe para buscar...",
+          selected: "Zona horaria seleccionada",
+        },
+        tabs: {
+          weekly: "Horarios Semanales",
+          overrides: "Excepciones y Feriados",
+        },
+        weekly: {
+          title: "Horarios de Atención Semanales",
+          description: "Configure los horarios regulares de atención para cada día de la semana.",
+          rule: "Regla",
+          days: "Días de la Semana",
+          hours: "Horarios",
+          closedMessage: "Cerrado (sin horarios definidos)",
+          addHour: "Añadir Horario",
+          addRule: "Añadir Nueva Regla Semanal",
+          from: "Desde",
+          to: "Hasta",
+          until: "hasta",
+        },
+        overrides: {
+          title: "Excepciones y Feriados",
+          description: "Configure fechas específicas con horarios especiales o cierres (feriados, eventos, etc.).",
+          exception: "Excepción",
+          date: "Fecha",
+          label: "Descripción",
+          labelPlaceholder: "Ej: Navidad, Carnaval...",
+          repeat: "Repetición",
+          repeatNone: "No repetir",
+          repeatYearly: "Anual",
+          closedDay: "Cerrado en este día",
+          specialHours: "Horarios Especiales",
+          addHour: "Añadir Horario",
+          addException: "Añadir Excepción o Feriado",
+          from: "Desde",
+          to: "Hasta",
+          until: "hasta",
+        },
+        days: {
+          mon: "Lunes",
+          tue: "Martes",
+          wed: "Miércoles",
+          thu: "Jueves",
+          fri: "Viernes",
+          sat: "Sábado",
+          sun: "Domingo",
+        },
       },
       ticketz: {
         registration: {
