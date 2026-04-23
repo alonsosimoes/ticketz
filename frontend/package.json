@@ -32,6 +32,7 @@
     "mic-recorder-to-mp3": "^2.2.2",
     "moment": "^2.29.1",
     "papaparse": "^5.5.3",
+    "pdfjs-dist": "^3.11.174",
     "qrcode.react": "^1.0.0",
     "query-string": "^7.0.0",
     "react": "^17.0.2",
@@ -63,6 +64,7 @@
     "validations-br": "^1.4.0",
     "vcard-parser": "^1.0.0",
     "wavoip-api": "https://github.com/ticketz-oss/wavoip-api#nossl-error",
+    "yet-another-react-lightbox": "^3.29.1",
     "yup": "^1.4.0"
   },
   "scripts": {
