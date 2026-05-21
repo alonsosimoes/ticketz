@@ -34,7 +34,7 @@ async function markSeedsAsExecuted() {
     await sequelize.query(
       `INSERT INTO "SequelizeData" (name) VALUES ${seedFiles
         .map(seed => `('${seed}')`)
-        .join(", ")}`
+        .join(", ")} ON CONFLICT DO NOTHING`
     );
     console.log("All seeds marked as executed successfully!");
   } catch (error) {

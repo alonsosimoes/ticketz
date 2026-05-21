@@ -6,10 +6,10 @@ module.exports = {
     collate: "utf8mb4_bin"
   },
   pool: {
-    max: process.env.DB_MAX_CONNECTIONS || 60,
-    min: process.env.DB_MIN_CONNECTIONS || 5,
-    acquire: process.env.DB_ACQUIRE || 30000,
-    idle: process.env.DB_IDLE || 10000
+    max: parseInt(process.env.DB_MAX_CONNECTIONS) || 60,
+    min: parseInt(process.env.DB_MIN_CONNECTIONS) || 5,
+    acquire: parseInt(process.env.DB_ACQUIRE) || 30000,
+    idle: parseInt(process.env.DB_IDLE) || 10000
   },
   dialect: process.env.DB_DIALECT || "postgres",
   timezone: process.env.DB_TIMEZONE || "-03:00",
