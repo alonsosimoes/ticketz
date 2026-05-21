@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { FormControl, InputLabel, Select, MenuItem } from "@material-ui/core";
-import { i18n } from '../../translate/i18n';
+import { i18n } from "../../translate/i18n";
 import { loadedCountries } from "../../helpers/loadCountries";
 
-const loadedCountryes = await loadedCountries
+const loadedCountryes = await loadedCountries;
 
 export function getCountryes() {
   return loadedCountryes;
@@ -23,7 +23,9 @@ export function SelectCountry({ className, label, value, name, onChange }) {
 
   return (
     <FormControl className={className}>
-      <InputLabel id="country-label">{label || i18n.t('addressForm.country')}</InputLabel>
+      <InputLabel id="country-label">
+        {label || i18n.t("addressForm.country")}
+      </InputLabel>
       <Select
         labelId="country-label"
         id="country"
@@ -31,7 +33,7 @@ export function SelectCountry({ className, label, value, name, onChange }) {
         value={value}
         onChange={onChange}
       >
-        {countries.map((country) => (
+        {countries.map(country => (
           <MenuItem key={country.iso2} value={country.iso2}>
             {country.emoji} {country.name}
           </MenuItem>

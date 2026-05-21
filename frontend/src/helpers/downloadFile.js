@@ -5,10 +5,10 @@ export async function downloadFile(fileurl) {
   const filename = url.pathname.substring(url.pathname.lastIndexOf("/") + 1);
 
   url.searchParams.append("_cb", Date.now()); // cache busting
-  
-  const link = document.createElement('a');
+
+  const link = document.createElement("a");
   link.download = filename;
-  link.style.display = 'none';
+  link.style.display = "none";
   let downloadUrl = null;
 
   try {
@@ -22,7 +22,7 @@ export async function downloadFile(fileurl) {
     // Fallback to direct download if CORS or other issues occur
     url.searchParams.delete("_cb");
     link.href = url;
-    link.target = '_blank';
+    link.target = "_blank";
   }
 
   document.body.appendChild(link);

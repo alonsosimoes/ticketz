@@ -21,6 +21,7 @@ import { MessageData } from "../helpers/SendMessage";
 import Message from "../models/Message";
 import Contact from "../models/Contact";
 import Ticket from "../models/Ticket";
+import OldMessage from "../models/OldMessage";
 import ForwardMessageService from "../services/MessageServices/ForwardMessageService";
 import { getWbot } from "../libs/wbot";
 import { verifyMessage } from "../services/WbotServices/wbotMessageListener";
@@ -29,7 +30,7 @@ import ShowContactService from "../services/ContactServices/ShowContactService";
 import { verifyContact } from "../services/WbotServices/verifyContact";
 
 type IndexQuery = {
-  pageNumber: string;
+  nextId?: string;
   markAsRead: string;
 };
 
@@ -42,7 +43,7 @@ type ForwardData = {
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const { ticketId } = req.params;
-  const { pageNumber, markAsRead } = req.query as IndexQuery;
+  const { nextId, markAsRead } = req.query as IndexQuery;
   const { companyId, profile } = req.user;
   const queues: number[] = [];
 
@@ -55,8 +56,14 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   //   });
   // }
 
-  const { count, messages, ticket, hasMore } = await ListMessagesService({
-    pageNumber,
+  const {
+    count,
+    messages,
+    ticket,
+    hasMore,
+    nextId: responseNextId
+  } = await ListMessagesService({
+    nextId,
     ticketId,
     companyId,
     queues
@@ -66,7 +73,56 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     SetTicketMessagesAsRead(ticket);
   }
 
-  return res.json({ count, messages, ticket, hasMore });
+  return res.json({ count, messages, ticket, hasMore, nextId: responseNextId });
+};
+
+export const historyByMessageId = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { messageId } = req.params;
+  const { companyId } = req.user;
+
+  const message = await Message.findOne({
+    where: {
+      id: messageId,
+      companyId
+    },
+    attributes: ["id"],
+    include: [
+      {
+        model: Ticket,
+        as: "ticket",
+        attributes: [
+          "id",
+          "companyId",
+          "status",
+          "userId",
+          "queueId",
+          "isGroup"
+        ]
+      }
+    ]
+  });
+
+  if (!message) {
+    throw new AppError("ERR_MESSAGE_NOT_FOUND", 404);
+  }
+
+  const ticket = message.ticket as Ticket;
+
+  if (ticket.companyId !== companyId) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
+  const oldMessages = await OldMessage.findAll({
+    where: {
+      messageId
+    },
+    order: [["createdAt", "ASC"]]
+  });
+
+  return res.json({ oldMessages });
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
@@ -224,10 +280,7 @@ export const forward = async (
           }
         ]
       },
-      {
-        model: Contact,
-        as: "contact"
-      }
+      "contact"
     ]
   });
 

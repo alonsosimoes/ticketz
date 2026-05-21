@@ -38,18 +38,25 @@ import { SocketContext } from "../../context/Socket/SocketContext";
 import { generateColor } from "../../helpers/colorGenerator";
 import { getInitials } from "../../helpers/getInitials";
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
-import { faDownload } from '@fortawesome/free-solid-svg-icons';
-import { FormControl, Grid, InputLabel, MenuItem, Select, Tooltip } from "@material-ui/core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCloudArrowUp } from "@fortawesome/free-solid-svg-icons";
+import { faDownload } from "@fortawesome/free-solid-svg-icons";
+import {
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  Tooltip
+} from "@material-ui/core";
 
 const reducer = (state, action) => {
   if (action.type === "LOAD_CONTACTS") {
     const contacts = action.payload;
     const newContacts = [];
 
-    contacts.forEach((contact) => {
-      const contactIndex = state.findIndex((c) => c.id === contact.id);
+    contacts.forEach(contact => {
+      const contactIndex = state.findIndex(c => c.id === contact.id);
       if (contactIndex !== -1) {
         state[contactIndex] = contact;
       } else {
@@ -62,7 +69,7 @@ const reducer = (state, action) => {
 
   if (action.type === "UPDATE_CONTACTS") {
     const contact = action.payload;
-    const contactIndex = state.findIndex((c) => c.id === contact.id);
+    const contactIndex = state.findIndex(c => c.id === contact.id);
 
     if (contactIndex !== -1) {
       state[contactIndex] = contact;
@@ -75,7 +82,7 @@ const reducer = (state, action) => {
   if (action.type === "DELETE_CONTACT") {
     const contactId = action.payload;
 
-    const contactIndex = state.findIndex((c) => c.id === contactId);
+    const contactIndex = state.findIndex(c => c.id === contactId);
     if (contactIndex !== -1) {
       state.splice(contactIndex, 1);
     }
@@ -87,22 +94,22 @@ const reducer = (state, action) => {
   }
 };
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   mainPaper: {
     flex: 1,
     padding: theme.spacing(1),
     overflowY: "scroll",
-    ...theme.scrollbarStyles,
+    ...theme.scrollbarStyles
   },
-  
+
   selectContainer: {
     width: "100%",
-    textAlign: "left",
+    textAlign: "left"
   },
   tagsdiv: {
     display: "flex",
     maxWidth: 350,
-    flexWrap: "wrap",
+    flexWrap: "wrap"
   },
   tag: {
     marginTop: 3,
@@ -112,10 +119,9 @@ const useStyles = makeStyles((theme) => ({
     textWrapMode: "nowrap",
     maxWidth: 150,
     overflow: "hidden",
-    textOverflow: "ellipsis",
+    textOverflow: "ellipsis"
   },
-  contactName: {
-  }
+  contactName: {}
 }));
 
 const Contacts = () => {
@@ -140,16 +146,16 @@ const Contacts = () => {
   const socketManager = useContext(SocketContext);
 
   useEffect(() => {
-    api.get('/whatsapp').then(({ data }) => {
+    api.get("/whatsapp").then(({ data }) => {
       setConnections(data);
-      data.map((connection) => {
+      data.map(connection => {
         if (connection.channel === "whatsapp" && connection.isDefault) {
           setImportConnectionId(connection.id);
         }
       });
     });
   }, []);
-  
+
   useEffect(() => {
     dispatch({ type: "RESET" });
     setPageNumber(1);
@@ -161,7 +167,7 @@ const Contacts = () => {
       const fetchContacts = async () => {
         try {
           const { data } = await api.get("/contacts/", {
-            params: { searchParam, pageNumber },
+            params: { searchParam, pageNumber }
           });
           dispatch({ type: "LOAD_CONTACTS", payload: data.contacts });
           setHasMore(data.hasMore);
@@ -179,7 +185,7 @@ const Contacts = () => {
     const companyId = localStorage.getItem("companyId");
     const socket = socketManager.GetSocket(companyId);
 
-    const onContact = (data) => {
+    const onContact = data => {
       if (!searchParam && ["update", "create"].includes(data.action)) {
         dispatch({ type: "UPDATE_CONTACTS", payload: data.contact });
       }
@@ -187,8 +193,8 @@ const Contacts = () => {
       if (data.action === "delete") {
         dispatch({ type: "DELETE_CONTACT", payload: +data.contactId });
       }
-    }
-    
+    };
+
     socket.on(`company-${companyId}-contact`, onContact);
 
     return () => {
@@ -196,7 +202,7 @@ const Contacts = () => {
     };
   }, [socketManager, searchParam]);
 
-  const handleSearch = (event) => {
+  const handleSearch = event => {
     setSearchParam(event.target.value.toLowerCase());
   };
 
@@ -210,12 +216,12 @@ const Contacts = () => {
     setContactModalOpen(false);
   };
 
-  const hadleEditContact = (contactId) => {
+  const hadleEditContact = contactId => {
     setSelectedContactId(contactId);
     setContactModalOpen(true);
   };
 
-  const handleDeleteContact = async (contactId) => {
+  const handleDeleteContact = async contactId => {
     try {
       await api.delete(`/contacts/${contactId}`);
       toast.success(i18n.t("contacts.toasts.deleted"));
@@ -237,46 +243,49 @@ const Contacts = () => {
   };
 
   const loadMore = () => {
-    setPageNumber((prevState) => prevState + 1);
+    setPageNumber(prevState => prevState + 1);
   };
 
-  const handleScroll = (e) => {
+  const handleScroll = e => {
     if (!hasMore || loading) return;
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     if (scrollHeight - (scrollTop + 100) < clientHeight) {
       loadMore();
     }
   };
-  
+
   const importCsv = async () => {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = ".csv";
     fileInput.click();
-    fileInput.onchange = async (e) => {
+    fileInput.onchange = async e => {
       const file = e.target.files[0];
       const formData = new FormData();
       formData.append("contacts", file);
       try {
-        api.post("/contacts/importCsv", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }).then(() => {
-          toast.success(i18n.t("contacts.toasts.imported"));
-        }).catch((err) => {
-          toastError(err);
-        });
+        api
+          .post("/contacts/importCsv", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+          .then(() => {
+            toast.success(i18n.t("contacts.toasts.imported"));
+          })
+          .catch(err => {
+            toastError(err);
+          });
       } catch (err) {
         toastError(err);
       }
     };
-  }
-  
+  };
+
   const exportCsv = async () => {
     try {
       const { data } = await api.get("/contacts/exportCsv", {
-        responseType: "blob",
+        responseType: "blob"
       });
       const url = window.URL.createObjectURL(new Blob([data]));
       const link = document.createElement("a");
@@ -287,8 +296,8 @@ const Contacts = () => {
     } catch (err) {
       toastError(err);
     }
-  }
-  
+  };
+
   return (
     <MainContainer className={classes.mainContainer}>
       <ContactModal
@@ -298,14 +307,10 @@ const Contacts = () => {
         contactId={selectedContactId}
       ></ContactModal>
       <ConfirmationModal
-        title={
-          `${i18n.t("contacts.confirmationModal.deleteTitle")} ${deletingContact?.name}?`
-        }
+        title={`${i18n.t("contacts.confirmationModal.deleteTitle")} ${deletingContact?.name}?`}
         open={deleteConfirmOpen}
         onClose={setDeleteConfirmOpen}
-        onConfirm={() =>
-          handleDeleteContact(deletingContact.id)
-        }
+        onConfirm={() => handleDeleteContact(deletingContact.id)}
       >
         {i18n.t("contacts.confirmationModal.deleteMessage")}
       </ConfirmationModal>
@@ -315,9 +320,7 @@ const Contacts = () => {
         okEnabled={importConnectionId}
         open={importConfirmOpen}
         onClose={setImportConfirmOpen}
-        onConfirm={() =>
-          handleimportContact()
-        }
+        onConfirm={() => handleimportContact()}
       >
         <Grid container spacing={2}>
           <Grid item xs={12}>
@@ -334,15 +337,17 @@ const Contacts = () => {
                 label={i18n.t("common.connection")}
                 name="whatsappId"
                 value={importConnectionId || ""}
-                onChange={(e) => setImportConnectionId(e.target.value)}
+                onChange={e => setImportConnectionId(e.target.value)}
               >
                 <MenuItem value="">&nbsp;</MenuItem>
-                {connections.map((connection) => (
-                  connection.channel === "whatsapp" &&
-                  <MenuItem key={connection.id} value={connection.id}>
-                    {connection.name}
-                  </MenuItem>
-                ))}
+                {connections.map(
+                  connection =>
+                    connection.channel === "whatsapp" && (
+                      <MenuItem key={connection.id} value={connection.id}>
+                        {connection.name}
+                      </MenuItem>
+                    )
+                )}
               </Select>
             </FormControl>
           </Grid>
@@ -361,24 +366,28 @@ const Contacts = () => {
                 <InputAdornment position="start">
                   <SearchIcon style={{ color: "gray" }} />
                 </InputAdornment>
-              ),
+              )
             }}
           />
-          {user?.profile === 'admin' &&
+          {user?.profile === "admin" && (
             <>
               <Button
                 variant="contained"
                 color="primary"
                 onClick={() => importCsv()}
               >
-                &nbsp;<FontAwesomeIcon icon={faCloudArrowUp} />&nbsp;
+                &nbsp;
+                <FontAwesomeIcon icon={faCloudArrowUp} />
+                &nbsp;
               </Button>
               <Button
                 variant="contained"
                 color="primary"
                 onClick={() => exportCsv()}
               >
-                &nbsp;<FontAwesomeIcon icon={faDownload} />&nbsp;
+                &nbsp;
+                <FontAwesomeIcon icon={faDownload} />
+                &nbsp;
               </Button>
               <Button
                 variant="contained"
@@ -388,7 +397,7 @@ const Contacts = () => {
                 {i18n.t("contacts.buttons.import")}
               </Button>
             </>
-          }
+          )}
           <Button
             variant="contained"
             color="primary"
@@ -407,7 +416,9 @@ const Contacts = () => {
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox" />
-              <TableCell className={classes.contactName}>{i18n.t("contacts.table.name")}</TableCell>
+              <TableCell className={classes.contactName}>
+                {i18n.t("contacts.table.name")}
+              </TableCell>
               <TableCell align="center">
                 {i18n.t("contacts.table.whatsapp")}
               </TableCell>
@@ -421,44 +432,57 @@ const Contacts = () => {
           </TableHead>
           <TableBody>
             <>
-              {contacts.map((contact) => (
+              {contacts.map(contact => (
                 <TableRow key={contact.id}>
                   <TableCell style={{ paddingRight: 0 }}>
-                    {<Avatar style={{ backgroundColor: generateColor(contact?.number), fontWeight: "bold", color: "white" }} src={contact.profilePicUrl}>{getInitials(contact?.name)}</Avatar>}
+                    {
+                      <Avatar
+                        style={{
+                          backgroundColor: generateColor(contact?.number),
+                          fontWeight: "bold",
+                          color: "white"
+                        }}
+                        src={contact.profilePicUrl}
+                      >
+                        {getInitials(contact?.name)}
+                      </Avatar>
+                    }
                   </TableCell>
                   <TableCell className={classes.contactName}>
                     {contact.name}
                     <div className={classes.tagsdiv}>
-                      {
-                        contact.tags.map((tag) => (
-                          <Tooltip title={tag.name} placement="top" arrow>
-                            <div
-                              key={tag.id}
-                              className={classes.tag}
-                              style={{
-                                backgroundColor: tag.color
-                              }}
-                            >
-                              {tag.name}
-                            </div>
-                          </Tooltip>
-                        ))
-                      }
+                      {contact.tags.map(tag => (
+                        <Tooltip title={tag.name} placement="top" arrow>
+                          <div
+                            key={tag.id}
+                            className={classes.tag}
+                            style={{
+                              backgroundColor: tag.color
+                            }}
+                          >
+                            {tag.name}
+                          </div>
+                        </Tooltip>
+                      ))}
                     </div>
                   </TableCell>
                   <TableCell align="center">{contact.number}</TableCell>
                   <TableCell align="center">{contact.email}</TableCell>
                   <TableCell align="center">
-                    {!contact.isGroup && <IconButton
-                      size="small"
-                      onClick={() => window.mentionClick({
-                        contactId: contact.id,
-                        name: contact?.name,
-                        number: contact?.number
-                      })}
-                    >
-                      <WhatsAppIcon />
-                    </IconButton>}
+                    {!contact.isGroup && (
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          window.mentionClick({
+                            contactId: contact.id,
+                            name: contact?.name,
+                            number: contact?.number
+                          })
+                        }
+                      >
+                        <WhatsAppIcon />
+                      </IconButton>
+                    )}
                     <IconButton
                       size="small"
                       onClick={() => hadleEditContact(contact.id)}

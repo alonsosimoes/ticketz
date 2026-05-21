@@ -44,25 +44,22 @@ import React, { useEffect, useState, useRef } from "react";
 import Grid from "@material-ui/core/Grid";
 import FormControl from "@material-ui/core/FormControl";
 import useSettings from "../../../hooks/useSettings";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 import { makeStyles } from "@material-ui/core/styles";
 import TextField from "@material-ui/core/TextField";
 import { AttachFile, Delete } from "@material-ui/icons";
-import {
-  IconButton,
-  InputAdornment,
-} from "@material-ui/core";
+import { IconButton, InputAdornment } from "@material-ui/core";
 import api from "../../../services/api";
 
-const useStyles = makeStyles((_) => ({
+const useStyles = makeStyles(_ => ({
   fieldContainer: {
     width: "100%",
-    textAlign: "left",
+    textAlign: "left"
   },
-  
+
   uploadInput: {
-    display: "none",
-  },
+    display: "none"
+  }
 }));
 
 export default function EfiSettings(props) {
@@ -78,43 +75,40 @@ export default function EfiSettings(props) {
     if (!e.target.files) {
       return;
     }
-    
+
     const file = e.target.files[0];
     const formData = new FormData();
-    
+
     formData.append("file", file);
     formData.append("settingKey", key);
-    
-    api.post("/settings/privateFile", formData, {
-      onUploadProgress: (event) => {
-        let progress = Math.round(
-          (event.loaded * 100) / event.total
-        );
-        console.log(
-          `Upload ${progress}%`
-        );
-      },
-    }).then((response) => {
-      const newSettings = { ...efiSettings };
-      newSettings[key] = response.data;
-      setEfiSettings(newSettings);
-    }).catch((err) => {
-      console.error(
-        `Houve um problema ao realizar o upload da imagem.`
-      );
-      console.log(err);
-    });
+
+    api
+      .post("/settings/privateFile", formData, {
+        onUploadProgress: event => {
+          let progress = Math.round((event.loaded * 100) / event.total);
+          console.log(`Upload ${progress}%`);
+        }
+      })
+      .then(response => {
+        const newSettings = { ...efiSettings };
+        newSettings[key] = response.data;
+        setEfiSettings(newSettings);
+      })
+      .catch(err => {
+        console.error(`Houve um problema ao realizar o upload da imagem.`);
+        console.log(err);
+      });
   };
 
   useEffect(() => {
     if (Array.isArray(settings)) {
-      const newSettings = {}; 
-      settings.forEach( (setting) => {
+      const newSettings = {};
+      settings.forEach(setting => {
         if (setting.key.startsWith("_efi")) {
           newSettings[setting.key.substring(1)] = setting.value;
         }
       });
-      setEfiSettings(newSettings); 
+      setEfiSettings(newSettings);
       console.debug(newSettings);
     }
   }, [settings]);
@@ -133,13 +127,13 @@ export default function EfiSettings(props) {
     storeSetting(`_${key}`, efiSettings[key]);
     toast.success("Operação atualizada com sucesso.");
   }
-  
+
   function setSetting(key, value) {
     const newSettings = { ...efiSettings };
     newSettings[key] = value;
     setEfiSettings(newSettings);
   }
-  
+
   async function storeAndSetSetting(key, value) {
     await storeSetting(key, value);
     setSetting(key, value);
@@ -159,40 +153,37 @@ export default function EfiSettings(props) {
               InputProps={{
                 endAdornment: (
                   <>
-                    { efiSettings.efiCertFile &&
+                    {efiSettings.efiCertFile && (
                       <IconButton
                         size="small"
                         color="default"
                         onClick={() => {
-                            storeAndSetSetting("efiCertFile","");
-                          }
-                        }  
+                          storeAndSetSetting("efiCertFile", "");
+                        }}
                       >
                         <Delete />
                       </IconButton>
-                    }
+                    )}
                     <input
                       type="file"
                       id="upload-efi-certificate-button"
                       ref={efiCertificateFileInput}
                       className={classes.uploadInput}
-                      onChange={(e) => uploadPrivate(e,"efiCertFile")}
+                      onChange={e => uploadPrivate(e, "efiCertFile")}
                     />
                     <label htmlFor="upload-efi-certificate-button">
                       <IconButton
                         size="small"
                         color="default"
-                        onClick={
-                          () => {
-                            efiCertificateFileInput.current.click();
-                          }
-                        }
+                        onClick={() => {
+                          efiCertificateFileInput.current.click();
+                        }}
                       >
                         <AttachFile />
                       </IconButton>
                     </label>
                   </>
-                ),
+                )
               }}
             />
           </FormControl>
@@ -206,12 +197,12 @@ export default function EfiSettings(props) {
               variant="standard"
               name="efiClientId"
               value={efiSettings.efiClientId || ""}
-              onChange={(e) => {
+              onChange={e => {
                 const newSettings = { ...efiSettings };
                 newSettings.efiClientId = e.target.value;
                 setEfiSettings(newSettings);
               }}
-              onBlur={async (_) => {
+              onBlur={async _ => {
                 await handleSaveSetting("efiClientId");
               }}
             />
@@ -225,10 +216,10 @@ export default function EfiSettings(props) {
               variant="standard"
               name="efiClientSecret"
               value={efiSettings.efiClientSecret || ""}
-              onChange={(e) => {
+              onChange={e => {
                 setSetting("efiClientSecret", e.target.value);
               }}
-              onBlur={async (_) => {
+              onBlur={async _ => {
                 await handleSaveSetting("efiClientSecret");
               }}
             />
@@ -242,18 +233,17 @@ export default function EfiSettings(props) {
               variant="standard"
               name="efiPixKey"
               value={efiSettings.efiPixKey || ""}
-              onChange={(e) => {
+              onChange={e => {
                 const newSettings = { ...efiSettings };
                 newSettings.efiPixKey = e.target.value;
                 setEfiSettings(newSettings);
               }}
-              onBlur={async (_) => {
+              onBlur={async _ => {
                 await handleSaveSetting("efiPixKey");
               }}
             />
           </FormControl>
         </Grid>
-
       </Grid>
     </>
   );

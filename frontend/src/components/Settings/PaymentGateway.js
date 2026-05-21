@@ -47,16 +47,16 @@ import FormControl from "@material-ui/core/FormControl";
 import InputLabel from "@material-ui/core/InputLabel";
 import Select from "@material-ui/core/Select";
 import useSettings from "../../hooks/useSettings";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 import { makeStyles } from "@material-ui/core/styles";
 import EfiSettings from "../PaymentGateways/Efi/EfiSettings";
 import PixTicketzSettings from "../PaymentGateways/PixTicketz/PixTicketzSettings";
 
-const useStyles = makeStyles((_) => ({
+const useStyles = makeStyles(_ => ({
   fieldContainer: {
     width: "100%",
-    textAlign: "left",
-  },
+    textAlign: "left"
+  }
 }));
 
 export default function PaymentGateway(props) {
@@ -68,7 +68,9 @@ export default function PaymentGateway(props) {
 
   useEffect(() => {
     if (Array.isArray(settings) && settings.length) {
-      const paymentGatewaySetting = settings.find((s) => s.key === "_paymentGateway");
+      const paymentGatewaySetting = settings.find(
+        s => s.key === "_paymentGateway"
+      );
       if (paymentGatewaySetting) {
         setPaymentGateway(paymentGatewaySetting.value);
       }
@@ -79,7 +81,7 @@ export default function PaymentGateway(props) {
     setPaymentGateway(value);
     await update({
       key: "_paymentGateway",
-      value,
+      value
     });
     toast.success("Operação atualizada com sucesso.");
   }
@@ -93,7 +95,7 @@ export default function PaymentGateway(props) {
             <Select
               labelId="paymentgateway-label"
               value={paymentGateway}
-              onChange={async (e) => {
+              onChange={async e => {
                 handleChangePaymentGateway(e.target.value);
               }}
             >
@@ -104,12 +106,10 @@ export default function PaymentGateway(props) {
           </FormControl>
         </Grid>
       </Grid>
-      { paymentGateway === "efi" && 
-        <EfiSettings settings={settings} />
-      }
-      { paymentGateway === "pixTicketz" && 
+      {paymentGateway === "efi" && <EfiSettings settings={settings} />}
+      {paymentGateway === "pixTicketz" && (
         <PixTicketzSettings settings={settings} />
-      }
+      )}
     </>
   );
 }

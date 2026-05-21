@@ -26,7 +26,7 @@ import {
   InputAdornment,
   Paper,
   Tab,
-  Tabs,
+  Tabs
 } from "@material-ui/core";
 import { AttachFile, Colorize, DeleteOutline } from "@material-ui/icons";
 import { QueueOptions } from "../QueueOptions";
@@ -34,18 +34,18 @@ import SchedulesForm from "../SchedulesForm";
 import OpenHoursEditor from "../../components/OpenHoursEditor";
 import ConfirmationModal from "../ConfirmationModal";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   root: {
     display: "flex",
-    flexWrap: "wrap",
+    flexWrap: "wrap"
   },
   textField: {
     marginRight: theme.spacing(1),
-    flex: 1,
+    flex: 1
   },
 
   btnWrapper: {
-    position: "relative",
+    position: "relative"
   },
 
   buttonProgress: {
@@ -54,16 +54,16 @@ const useStyles = makeStyles((theme) => ({
     top: "50%",
     left: "50%",
     marginTop: -12,
-    marginLeft: -12,
+    marginLeft: -12
   },
   formControl: {
     margin: theme.spacing(1),
-    minWidth: 120,
+    minWidth: 120
   },
   colorAdorment: {
     width: 20,
-    height: 20,
-  },
+    height: 20
+  }
 }));
 
 const QueueSchema = Yup.object().shape({
@@ -72,11 +72,11 @@ const QueueSchema = Yup.object().shape({
     .max(50, "Too Long!")
     .required("Required"),
   color: Yup.string().min(3, "Too Short!").max(9, "Too Long!").required(),
-  greetingMessage: Yup.string(),
+  greetingMessage: Yup.string()
 });
 
 // Helper to check if value is OpenHours format or empty
-const isOpenHoursFormat = (schedules) => {
+const isOpenHoursFormat = schedules => {
   if (!schedules || Object.keys(schedules).length === 0) return true;
   return (
     typeof schedules === "object" &&
@@ -92,8 +92,7 @@ const QueueModal = ({ open, onClose, queueId }) => {
     name: "",
     color: "",
     greetingMessage: "",
-    outOfHoursMessage: "",
-
+    outOfHoursMessage: ""
   };
 
   const [colorPickerModalOpen, setColorPickerModalOpen] = useState(false);
@@ -111,7 +110,7 @@ const QueueModal = ({ open, onClose, queueId }) => {
   useEffect(() => {
     api.get(`/settings`).then(({ data }) => {
       if (Array.isArray(data)) {
-        const scheduleType = data.find((d) => d.key === "scheduleType");
+        const scheduleType = data.find(d => d.key === "scheduleType");
         if (scheduleType) {
           setSchedulesEnabled(scheduleType.value === "queue");
         }
@@ -124,7 +123,7 @@ const QueueModal = ({ open, onClose, queueId }) => {
       if (!queueId) return;
       try {
         const { data } = await api.get(`/queue/${queueId}`);
-        setQueue((prevState) => {
+        setQueue(prevState => {
           return { ...prevState, ...data };
         });
         setSchedules(data.schedules);
@@ -137,7 +136,7 @@ const QueueModal = ({ open, onClose, queueId }) => {
       setQueue({
         name: "",
         color: "",
-        greetingMessage: "",
+        greetingMessage: ""
       });
     };
   }, [queueId, open]);
@@ -147,7 +146,7 @@ const QueueModal = ({ open, onClose, queueId }) => {
     setQueue(initialState);
   };
 
-  const handleAttachmentFile = (e) => {
+  const handleAttachmentFile = e => {
     const file = head(e.target.files);
     if (file) {
       setAttachment(file);
@@ -162,12 +161,12 @@ const QueueModal = ({ open, onClose, queueId }) => {
 
     if (queue.mediaPath) {
       await api.delete(`/queue/${queue.id}/media-upload`);
-      setQueue((prev) => ({ ...prev, mediaPath: null, mediaName: null }));
+      setQueue(prev => ({ ...prev, mediaPath: null, mediaName: null }));
       toast.success(i18n.t("queueModal.toasts.deleted"));
     }
   };
 
-  const handleSaveQueue = async (values) => {
+  const handleSaveQueue = async values => {
     try {
       if (queueId) {
         await api.put(`/queue/${queueId}`, { ...values, schedules });
@@ -191,7 +190,7 @@ const QueueModal = ({ open, onClose, queueId }) => {
     }
   };
 
-  const handleSaveSchedules = async (values) => {
+  const handleSaveSchedules = async values => {
     toast.success("Clique em salvar para registar as alterações");
     setSchedules(values);
     setTab(0);
@@ -199,7 +198,7 @@ const QueueModal = ({ open, onClose, queueId }) => {
 
   return (
     <div className={classes.root}>
-       <ConfirmationModal
+      <ConfirmationModal
         title={i18n.t("queueModal.confirmationModal.deleteTitle")}
         open={confirmationOpen}
         onClose={() => setConfirmationOpen(false)}
@@ -218,11 +217,11 @@ const QueueModal = ({ open, onClose, queueId }) => {
           {queueId
             ? `${i18n.t("queueModal.title.edit")}`
             : `${i18n.t("queueModal.title.add")}`}
-           <div style={{ display: "none" }}>
+          <div style={{ display: "none" }}>
             <input
               type="file"
               ref={attachmentFile}
-              onChange={(e) => handleAttachmentFile(e)}
+              onChange={e => handleAttachmentFile(e)}
             />
           </div>
         </DialogTitle>
@@ -291,7 +290,7 @@ const QueueModal = ({ open, onClose, queueId }) => {
                           >
                             <Colorize />
                           </IconButton>
-                        ),
+                        )
                       }}
                       variant="outlined"
                       margin="dense"
@@ -300,7 +299,7 @@ const QueueModal = ({ open, onClose, queueId }) => {
                     <ColorPicker
                       open={colorPickerModalOpen}
                       handleClose={() => setColorPickerModalOpen(false)}
-                      onChange={(color) => {
+                      onChange={color => {
                         values.color = color;
                         setQueue(() => {
                           return { ...values, color };
@@ -308,67 +307,68 @@ const QueueModal = ({ open, onClose, queueId }) => {
                       }}
                     />
                     <div style={{ marginTop: 5 }}>
-                          <Field
-                            as={TextField}
-                            label={i18n.t("queueModal.form.greetingMessage")}
-                            type="greetingMessage"
-                            multiline
-                            inputRef={greetingRef}
-                            rows={5}
-                            fullWidth
-                            name="greetingMessage"
-                            spellCheck={true}
-                            error={
-                              touched.greetingMessage &&
-                              Boolean(errors.greetingMessage)
-                            }
-                            helperText={
-                              touched.greetingMessage && errors.greetingMessage
-                            }
-                            variant="outlined"
-                            margin="dense"
-                          />
-                        {schedulesEnabled && (
-                            <Field
-                              as={TextField}
-                              InputLabelProps={{ shrink: true }}
-                              label={i18n.t("queueModal.form.outOfHoursMessage")}
-                              type="outOfHoursMessage"
-                              multiline
-                              rows={5}
-                              fullWidth
-                              name="outOfHoursMessage"
-                              spellCheck={true}
-                              error={
-                                touched.outOfHoursMessage &&
-                                Boolean(errors.outOfHoursMessage)
-                              }
-                              helperText={
-                                touched.outOfHoursMessage && errors.outOfHoursMessage
-                              }
-                              variant="outlined"
-                              margin="dense"
-                            />
-                        )}
+                      <Field
+                        as={TextField}
+                        label={i18n.t("queueModal.form.greetingMessage")}
+                        type="greetingMessage"
+                        multiline
+                        inputRef={greetingRef}
+                        rows={5}
+                        fullWidth
+                        name="greetingMessage"
+                        spellCheck={true}
+                        error={
+                          touched.greetingMessage &&
+                          Boolean(errors.greetingMessage)
+                        }
+                        helperText={
+                          touched.greetingMessage && errors.greetingMessage
+                        }
+                        variant="outlined"
+                        margin="dense"
+                      />
+                      {schedulesEnabled && (
+                        <Field
+                          as={TextField}
+                          InputLabelProps={{ shrink: true }}
+                          label={i18n.t("queueModal.form.outOfHoursMessage")}
+                          type="outOfHoursMessage"
+                          multiline
+                          rows={5}
+                          fullWidth
+                          name="outOfHoursMessage"
+                          spellCheck={true}
+                          error={
+                            touched.outOfHoursMessage &&
+                            Boolean(errors.outOfHoursMessage)
+                          }
+                          helperText={
+                            touched.outOfHoursMessage &&
+                            errors.outOfHoursMessage
+                          }
+                          variant="outlined"
+                          margin="dense"
+                        />
+                      )}
                     </div>
                     <QueueOptions queueId={queueId} />
                     {(queue.mediaPath || attachment) && (
-                    <Grid xs={12} item>
-                      <Button startIcon={<AttachFile />}>
-                        {attachment != null
-                          ? attachment.name
-                          : queue.mediaName}
-                      </Button>
-                      {queueEditable && (
-                        <IconButton
-                          onClick={() => setConfirmationOpen(true)}
-                          color="secondary"
-                        >
-                          <DeleteOutline />
-                        </IconButton>
-                      )}
-                    </Grid>
-                  )}
+                      <Grid xs={12} item>
+                        <Button startIcon={<AttachFile />}>
+                          {attachment != null
+                            ? attachment.name
+                            : queue.mediaName}
+                        </Button>
+                        {queueEditable && (
+                          <IconButton
+                            onClick={() => setConfirmationOpen(true)}
+                            color="secondary"
+                          >
+                            <DeleteOutline />
+                          </IconButton>
+                        )}
+                      </Grid>
+                    )}
                   </DialogContent>
                   <DialogActions>
                     {!attachment && !queue.mediaPath && queueEditable && (
@@ -416,11 +416,14 @@ const QueueModal = ({ open, onClose, queueId }) => {
           <Paper style={{ padding: 20 }}>
             {isOpenHoursFormat(schedules) ? (
               <>
-                <OpenHoursEditor
-                  value={schedules}
-                  onChange={setSchedules}
-                />
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+                <OpenHoursEditor value={schedules} onChange={setSchedules} />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: 16
+                  }}
+                >
                   <Button
                     variant="contained"
                     color="primary"
@@ -431,27 +434,27 @@ const QueueModal = ({ open, onClose, queueId }) => {
                 </div>
               </>
             ) : (
-                <>
-                  <Grid spacing={4} container>
-                    <Grid item xs={12}>
-                      <div>
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          onClick={() => setSchedules({})}
-                        >
+              <>
+                <Grid spacing={4} container>
+                  <Grid item xs={12}>
+                    <div>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => setSchedules({})}
+                      >
                         ⚠️ {i18n.t("settings.schedules.updateToNewFormat")}
-                        </Button>
-                      </div>
-                    </Grid>
+                      </Button>
+                    </div>
                   </Grid>
-                  <SchedulesForm
-                    loading={false}
-                    onSubmit={handleSaveSchedules}
-                    initialValues={schedules}
-                    labelSaveButton="Adicionar"
-                  />
-                </>
+                </Grid>
+                <SchedulesForm
+                  loading={false}
+                  onSubmit={handleSaveSchedules}
+                  initialValues={schedules}
+                  labelSaveButton="Adicionar"
+                />
+              </>
             )}
           </Paper>
         )}

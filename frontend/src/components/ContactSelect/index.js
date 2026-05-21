@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { TextField, Chip } from "@material-ui/core";
-import Autocomplete, { createFilterOptions } from "@material-ui/lab/Autocomplete";
+import Autocomplete, {
+  createFilterOptions
+} from "@material-ui/lab/Autocomplete";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
 import { i18n } from "../../translate/i18n";
@@ -77,24 +79,26 @@ export function ContactSelect({
       filterOptions={filterOptions}
       noOptionsText=""
       getOptionLabel={option =>
-        option.inputValue ? option.name : `${option.name}${option.number ? ` - ${option.number}` : ""}`
+        option.inputValue
+          ? option.name
+          : `${option.name}${option.number ? ` - ${option.number}` : ""}`
       }
       renderTags={(value, getTagProps) =>
         value
           ? [
-            <Chip
-              key={value.id || value.inputValue}
-              variant="outlined"
-              style={{
-                backgroundColor: "#bfbfbf",
-                textShadow: "1px 1px 1px #000",
-                color: "white",
-              }}
-              label={value.name}
-              {...getTagProps({ index: 0 })}
-              size="small"
-            />,
-          ]
+              <Chip
+                key={value.id || value.inputValue}
+                variant="outlined"
+                style={{
+                  backgroundColor: "#bfbfbf",
+                  textShadow: "1px 1px 1px #000",
+                  color: "white"
+                }}
+                label={value.name}
+                {...getTagProps({ index: 0 })}
+                size="small"
+              />
+            ]
           : []
       }
       renderInput={params => (

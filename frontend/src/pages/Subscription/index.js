@@ -3,8 +3,8 @@ import { makeStyles } from "@material-ui/core/styles";
 
 import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
-import Grid from '@material-ui/core/Grid';
-import TextField from '@material-ui/core/TextField';
+import Grid from "@material-ui/core/Grid";
+import TextField from "@material-ui/core/TextField";
 
 import SubscriptionModal from "../../components/SubscriptionModal";
 import MainHeader from "../../components/MainHeader";
@@ -13,34 +13,33 @@ import MainContainer from "../../components/MainContainer";
 
 import { AuthContext } from "../../context/Auth/AuthContext";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   mainPaper: {
     flex: 1,
     padding: theme.spacing(1),
     overflowY: "scroll",
-    ...theme.scrollbarStyles,
-  },
+    ...theme.scrollbarStyles
+  }
 }));
 
-const _formatDate = (date) => {
+const _formatDate = date => {
   const now = new Date();
   const past = new Date(date);
   const diff = Math.abs(now.getTime() - past.getTime());
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
   return days;
-}
+};
 
 const Contacts = () => {
   const classes = useStyles();
   const { user } = useContext(AuthContext);
 
-  const [loading,] = useState(false);
+  const [loading] = useState(false);
   const [, setPageNumber] = useState(1);
   const [selectedContactId, setSelectedContactId] = useState(null);
   const [contactModalOpen, setContactModalOpen] = useState(false);
-  const [hasMore,] = useState(false);
-
+  const [hasMore] = useState(false);
 
   const handleOpenContactModal = () => {
     setSelectedContactId(null);
@@ -53,10 +52,10 @@ const Contacts = () => {
   };
 
   const loadMore = () => {
-    setPageNumber((prevState) => prevState + 1);
+    setPageNumber(prevState => prevState + 1);
   };
 
-  const handleScroll = (e) => {
+  const handleScroll = e => {
     if (!hasMore || loading) return;
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     if (scrollHeight - (scrollTop + 100) < clientHeight) {
@@ -82,7 +81,6 @@ const Contacts = () => {
           variant="outlined"
           onScroll={handleScroll}
         >
-
           <div>
             <TextField
               id="outlined-full-width"
@@ -91,14 +89,13 @@ const Contacts = () => {
               fullWidth
               margin="normal"
               InputLabelProps={{
-                shrink: true,
+                shrink: true
               }}
               InputProps={{
-                readOnly: true,
+                readOnly: true
               }}
               variant="outlined"
             />
-
           </div>
 
           <div>
@@ -109,14 +106,13 @@ const Contacts = () => {
               fullWidth
               margin="normal"
               InputLabelProps={{
-                shrink: true,
+                shrink: true
               }}
               InputProps={{
-                readOnly: true,
+                readOnly: true
               }}
               variant="outlined"
             />
-
           </div>
 
           <div>
@@ -129,7 +125,6 @@ const Contacts = () => {
               Assine Agora!
             </Button>
           </div>
-
         </Paper>
       </Grid>
     </MainContainer>

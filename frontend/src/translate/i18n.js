@@ -6,14 +6,14 @@ import { messages } from "./languages";
 i18n.use(LanguageDetector).init({
   debug: false,
   detection: {
-    order: ['localStorage', 'navigator'],
-    lookupLocalStorage: 'language',
-    caches: ['localStorage'],
+    order: ["localStorage", "navigator"],
+    lookupLocalStorage: "language",
+    caches: ["localStorage"]
   },
   defaultNS: ["translations"],
   fallbackLng: "en",
   ns: ["translations"],
-  resources: messages,
+  resources: messages
 });
 
 export { i18n };

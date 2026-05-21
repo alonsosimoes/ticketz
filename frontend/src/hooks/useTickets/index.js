@@ -9,7 +9,8 @@ const useTickets = ({
   contactId,
   tags,
   users,
-  pageNumber,
+  nextUpdatedAt,
+  nextTicketId,
   status,
   groups,
   date,
@@ -18,10 +19,9 @@ const useTickets = ({
   queueIds,
   withUnreadMessages,
   notClosed,
-  all,
+  all
 }) => {
   const [loading, setLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(false);
   const [tickets, setTickets] = useState([]);
 
   useEffect(() => {
@@ -33,7 +33,8 @@ const useTickets = ({
             params: {
               isSearch,
               searchParam,
-              pageNumber,
+              nextUpdatedAt,
+              nextTicketId,
               contactId,
               tags,
               users,
@@ -45,11 +46,10 @@ const useTickets = ({
               queueIds,
               withUnreadMessages,
               notClosed,
-              all,
-            },
+              all
+            }
           });
           setTickets(data.tickets);
-          setHasMore(data.hasMore);
           setLoading(false);
         } catch (err) {
           setLoading(false);
@@ -64,7 +64,8 @@ const useTickets = ({
     contactId,
     tags,
     users,
-    pageNumber,
+    nextUpdatedAt,
+    nextTicketId,
     status,
     groups,
     date,
@@ -72,9 +73,15 @@ const useTickets = ({
     showAll,
     queueIds,
     withUnreadMessages,
+    isSearch,
+    notClosed,
+    all
   ]);
 
-  return { tickets, loading, hasMore };
+  return {
+    tickets,
+    loading
+  };
 };
 
 export default useTickets;

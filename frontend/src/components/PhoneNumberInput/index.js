@@ -15,7 +15,7 @@ export function PhoneNumberInput(props) {
   const value = field?.value ?? props.value ?? "";
   const name = field?.name ?? props.name;
 
-  const onChangeValue = (val) => {
+  const onChangeValue = val => {
     if (formik && name) {
       formik.setFieldValue(name, val);
       formik.setFieldTouched(name, true, false);
@@ -37,7 +37,8 @@ export function PhoneNumberInput(props) {
 
   useEffect(() => {
     if (!value && countries.length) {
-      const defaultCountry = countries.find(c => c.iso2 === currentCountry) || countries[0];
+      const defaultCountry =
+        countries.find(c => c.iso2 === currentCountry) || countries[0];
       if (defaultCountry && !countryCode) {
         setCountryCode(defaultCountry.phonecode);
       }
@@ -55,25 +56,26 @@ export function PhoneNumberInput(props) {
         setIsStandard(false);
         return;
       }
-      const defaultCountry = countries.find(c => c.iso2 === currentCountry) || countries[0];
+      const defaultCountry =
+        countries.find(c => c.iso2 === currentCountry) || countries[0];
       setCountryCode(defaultCountry.phonecode);
       setLocalNumber(value);
       setIsStandard(false);
     }
   }, [value, countries]);
 
-  const handleCountryChange = (e) => {
+  const handleCountryChange = e => {
     setCountryCode(e.target.value);
     onChangeValue(e.target.value + localNumber);
   };
 
-  const handleLocalChange = (e) => {
+  const handleLocalChange = e => {
     const val = e.target.value.replace(/\D/g, "");
     setLocalNumber(val);
     onChangeValue(countryCode + val);
   };
 
-  const handleStandardChange = (e) => {
+  const handleStandardChange = e => {
     onChangeValue(e.target.value);
   };
 
@@ -110,7 +112,7 @@ export function PhoneNumberInput(props) {
               : `+${countryCode}`
         }}
       >
-        {countries.map((option) => (
+        {countries.map(option => (
           <MenuItem key={option.iso2} value={option.phonecode}>
             {`${option.name} (+${option.phonecode})`}
           </MenuItem>

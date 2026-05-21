@@ -11,6 +11,7 @@ import fs from "fs";
 import path from "path";
 import AppError from "../errors/AppError";
 import QueueOption from "../models/QueueOption";
+import saveMediaToFile from "../helpers/saveMediaFile";
 
 type FilterList = {
   queueId: string;
@@ -25,11 +26,11 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const convertedQueueId: number = parseInt(queueId, 10);
   const convertedQueueOptionId = parseInt(queueOptionId, 10);
   const convertedParentId = parseInt(parentId, 10);
-  
-  const queueOptions = await ListService({ 
+
+  const queueOptions = await ListService({
     queueId: convertedQueueId,
     queueOptionId: convertedQueueOptionId,
-    parentId: convertedParentId 
+    parentId: convertedParentId
   });
 
   return res.json(queueOptions);
@@ -55,7 +56,7 @@ export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { queueOptionId } = req.params
+  const { queueOptionId } = req.params;
   const queueOptionData = req.body;
 
   const queueOption = await UpdateService(queueOptionId, queueOptionData);
@@ -67,7 +68,7 @@ export const remove = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { queueOptionId } = req.params
+  const { queueOptionId } = req.params;
 
   await DeleteService(queueOptionId);
 
@@ -83,15 +84,32 @@ export const mediaUpload = async (
   const file = head(files);
 
   try {
-    const queue = await QueueOption.findByPk(queueOptionId);
-   
-    queue.update({
-      mediaPath: file.filename,
+    const queueOption = await QueueOption.findOne(
+      QueueOption.withTopParentQueue({
+        where: { id: queueOptionId }
+      })
+    );
+
+    const savedFilePath = await saveMediaToFile(
+      {
+        data: fs.readFileSync(file.path),
+        mimetype: file.mimetype,
+        filename: file.originalname
+      },
+      {
+        destination: queueOption.topParentQueue.companyId
+      }
+    );
+
+    fs.unlinkSync(file.path);
+
+    queueOption.update({
+      mediaPath: savedFilePath,
       mediaName: file.originalname
     });
-   
+
     return res.send({ mensagem: "Arquivo Salvo" });
-  } catch (err: any) {
+  } catch (err) {
     throw new AppError(err.message);
   }
 };
@@ -114,7 +132,7 @@ export const deleteMedia = async (
     queue.mediaName = null;
     await queue.save();
     return res.send({ mensagem: "Arquivo excluído" });
-  } catch (err: any) {
+  } catch (err) {
     throw new AppError(err.message);
   }
 };

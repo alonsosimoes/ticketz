@@ -1,59 +1,57 @@
-import { useState, useEffect } from 'react';
-import TextField from '@material-ui/core/TextField';
-import IconButton from '@material-ui/core/IconButton';
-import SaveIcon from '@material-ui/icons/Save';
-import ClearIcon from '@material-ui/icons/Clear';
-import List from '@material-ui/core/List';
-import { makeStyles } from '@material-ui/core/styles';
+import { useState, useEffect } from "react";
+import TextField from "@material-ui/core/TextField";
+import IconButton from "@material-ui/core/IconButton";
+import SaveIcon from "@material-ui/icons/Save";
+import ClearIcon from "@material-ui/icons/Clear";
+import List from "@material-ui/core/List";
+import { makeStyles } from "@material-ui/core/styles";
 import * as Yup from "yup";
 import { Formik } from "formik";
-import TicketNotesItem from '../TicketNotesItem';
-import ConfirmationModal from '../ConfirmationModal';
+import TicketNotesItem from "../TicketNotesItem";
+import ConfirmationModal from "../ConfirmationModal";
 import { toast } from "react-toastify";
 import { i18n } from "../../translate/i18n";
-import useTicketNotes from '../../hooks/useTicketNotes';
-import { Grid } from '@material-ui/core';
+import useTicketNotes from "../../hooks/useTicketNotes";
+import { Grid } from "@material-ui/core";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   root: {
-    '& .MuiTextField-root': {
+    "& .MuiTextField-root": {
       margin: theme.spacing(1),
-      width: '350px',
-    },
+      width: "350px"
+    }
   },
   list: {
-    width: '100%',
-    maxWidth: '350px',
-    maxHeight: '200px',
+    width: "100%",
+    maxWidth: "350px",
+    maxHeight: "200px",
     backgroundColor: theme.palette.background.paper,
-    overflow: 'auto'
+    overflow: "auto"
   },
   inline: {
-    width: '100%'
+    width: "100%"
   },
   textFieldWrapper: {
-    position: 'relative',
-    width: '100%',
+    position: "relative",
+    width: "100%"
   },
   adornment: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     right: 0,
-    display: 'flex',
+    display: "flex",
     zIndex: 3,
     marginTop: -12,
     marginRight: 10,
-    background: theme.palette.background.paper,
+    background: theme.palette.background.paper
   },
   smallIcon: {
-    fontSize: 24,
-  },
+    fontSize: 24
+  }
 }));
 
 const NoteSchema = Yup.object().shape({
-  note: Yup.string()
-    .min(2, "Too Short!")
-    .required("Required")
+  note: Yup.string().min(2, "Too Short!").required("Required")
 });
 
 export function TicketNotes({ ticket }) {
@@ -90,7 +88,7 @@ export function TicketNotes({ ticket }) {
     setLoading(false);
   };
 
-  const handleOpenDialogDelete = (item) => {
+  const handleOpenDialogDelete = item => {
     setSelectedNote(item);
     setShowOnDeleteDialog(true);
   };
@@ -120,12 +118,14 @@ export function TicketNotes({ ticket }) {
   };
 
   const renderNoteList = () => {
-    return notes.map((note) => {
-      return <TicketNotesItem
-        note={note}
-        key={note.id}
-        deleteItem={handleOpenDialogDelete}
-      />;
+    return notes.map(note => {
+      return (
+        <TicketNotesItem
+          note={note}
+          key={note.id}
+          deleteItem={handleOpenDialogDelete}
+        />
+      );
     });
   };
 
@@ -135,7 +135,8 @@ export function TicketNotes({ ticket }) {
         title={i18n.t("common.delete")}
         open={showOnDeleteDialog}
         onClose={setShowOnDeleteDialog}
-        onConfirm={handleDelete} />
+        onConfirm={handleDelete}
+      />
       <Formik
         initialValues={{ note: "" }}
         enableReinitialize={false}
@@ -144,20 +145,15 @@ export function TicketNotes({ ticket }) {
       >
         {({ values, handleChange, handleBlur, resetForm, submitForm }) => (
           <Grid container spacing={2}>
-            {notes.length > 0 && (
-              <Grid xs={12} item>
-                <List className={classes.list}>
-                  {renderNoteList()}
-                </List>
-              </Grid>
-            )}
             <Grid xs={12} item>
               <div className={classes.textFieldWrapper}>
                 <TextField
                   name="note"
                   rows={3}
                   label={i18n.t("ticketOptionsMenu.appointmentsModal.textarea")}
-                  placeholder={i18n.t("ticketOptionsMenu.appointmentsModal.placeholder")}
+                  placeholder={i18n.t(
+                    "ticketOptionsMenu.appointmentsModal.placeholder"
+                  )}
                   multiline
                   value={values.note}
                   onChange={handleChange}
@@ -165,7 +161,7 @@ export function TicketNotes({ ticket }) {
                   variant="outlined"
                   fullWidth
                   onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       submitForm();
                     }
@@ -193,6 +189,11 @@ export function TicketNotes({ ticket }) {
                 )}
               </div>
             </Grid>
+            {notes.length > 0 && (
+              <Grid xs={12} item>
+                <List className={classes.list}>{renderNoteList()}</List>
+              </Grid>
+            )}
           </Grid>
         )}
       </Formik>

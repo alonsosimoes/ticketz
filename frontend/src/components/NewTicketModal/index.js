@@ -10,7 +10,15 @@ import ButtonWithSpinner from "../ButtonWithSpinner";
 import ContactModal from "../ContactModal";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
-import { Grid, ListItemText, MenuItem, Select, TextField, FormControl, InputLabel } from "@material-ui/core";
+import {
+  Grid,
+  ListItemText,
+  MenuItem,
+  Select,
+  TextField,
+  FormControl,
+  InputLabel
+} from "@material-ui/core";
 import { toast } from "react-toastify";
 import { ContactSelect } from "../ContactSelect";
 
@@ -41,7 +49,7 @@ const NewTicketModal = ({ modalOpen, onClose, contact }) => {
 
   const handleSaveTicket = async contactId => {
     if (!contactId) return;
-    if (selectedQueue === "" && user.profile !== 'admin') {
+    if (selectedQueue === "" && user.profile !== "admin") {
       toast.error("Selecione uma fila");
       return;
     }
@@ -52,7 +60,7 @@ const NewTicketModal = ({ modalOpen, onClose, contact }) => {
         contactId: contactId,
         queueId,
         userId: user.id,
-        status: "open",
+        status: "open"
       });
       onClose(ticket);
     } catch (err) {
@@ -116,7 +124,9 @@ const NewTicketModal = ({ modalOpen, onClose, contact }) => {
             </Grid>
             <Grid xs={12} item>
               <FormControl fullWidth variant="outlined" margin="dense">
-                <InputLabel id="queue-label">{i18n.t("common.queue")}</InputLabel>
+                <InputLabel id="queue-label">
+                  {i18n.t("common.queue")}
+                </InputLabel>
                 <Select
                   fullWidth
                   displayEmpty
@@ -124,26 +134,26 @@ const NewTicketModal = ({ modalOpen, onClose, contact }) => {
                   margin="dense"
                   value={selectedQueue || ""}
                   label={i18n.t("common.queue")}
-                  onChange={(e) => {
-                    setSelectedQueue(e.target.value)
+                  onChange={e => {
+                    setSelectedQueue(e.target.value);
                   }}
                   MenuProps={{
                     anchorOrigin: {
                       vertical: "bottom",
-                      horizontal: "left",
+                      horizontal: "left"
                     },
                     transformOrigin: {
                       vertical: "top",
-                      horizontal: "left",
+                      horizontal: "left"
                     },
-                    getContentAnchorEl: null,
+                    getContentAnchorEl: null
                   }}
                   renderValue={() => {
                     if (!selectedQueue) {
-                      return
+                      return;
                     }
-                    const queue = user.queues.find(q => q.id === selectedQueue)
-                    return queue.name
+                    const queue = user.queues.find(q => q.id === selectedQueue);
+                    return queue.name;
                   }}
                 >
                   {user.queues?.length > 0 &&
