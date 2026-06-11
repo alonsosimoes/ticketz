@@ -73,6 +73,17 @@ const messages = {
           perDay: {
             title: "Interventions aujourd'hui : "
           }
+        },
+        blog: {
+          title: "Le blog de Ticketz",
+          loading: "Chargement des articles...",
+          error: "Impossible de charger les articles du blog.",
+          empty: "Aucun article trouve.",
+          showAll: "Afficher tous les articles",
+          showLess: "Afficher moins",
+          openPost: "Lire l'article",
+          previous: "Article precedent",
+          next: "Article suivant"
         }
       },
       connections: {
@@ -1078,6 +1089,32 @@ const messages = {
           country: "Pays",
           phoneNumber: "Numéro WhatsApp",
           submit: "S'inscrire"
+        },
+        proAd: {
+          imageAlt: "Capture d'écran Ticketz PRO",
+          title: "Ticketz PRO",
+          features: {
+            officialChannels:
+              "WhatsApp officiel - Instagram - Messenger et plus",
+            exclusiveFeatures: "Fonctionnalités exclusives",
+            advancedSupport: "Support avancé",
+            easyMigration: "Migration facilitée"
+          },
+          subscribePrice: "Abonnez-vous pour {{monthlyPrice}}/mois",
+          subscribeSubtitle: "directement dans le système",
+          ctaUpgrade: "Cliquez pour les instructions de mise à niveau",
+          ctaVisitSite: "Cliquez pour visiter le site",
+          instructions: {
+            title: "Instructions de mise à niveau",
+            stepIntro:
+              "Si vous avez installé les images fournies par le projet sur un serveur ou un VPS à l'aide des instructions simplifiées, il vous suffit d'accéder à votre serveur et d'exécuter la commande ci-dessous :",
+            stepInstall:
+              'Dans quelques instants, Ticketz PRO sera installé avec toutes vos données ; ensuite, allez dans le menu utilisateur, cliquez sur "Abonnement Ticketz PRO" et finalisez votre abonnement.',
+            helpPrefix:
+              "Si votre installation est différente ou si vous pensez avoir besoin d'aide pour installer Ticketz PRO, ",
+            helpLink: "contactez-nous",
+            helpSuffix: " et nous vous aiderons !"
+          }
         },
         support: {
           title: "Soutenez le projet Ticketz Open Source",

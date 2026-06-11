@@ -105,6 +105,17 @@ const messages = {
           perDay: {
             title: "Atendimentos hoje: "
           }
+        },
+        blog: {
+          title: "Blog do Ticketz",
+          loading: "A carregar artigos...",
+          error: "Nao foi possivel carregar os artigos do blog.",
+          empty: "Nenhum artigo encontrado.",
+          showAll: "Mostrar todos os artigos",
+          showLess: "Mostrar menos",
+          openPost: "Ler artigo",
+          previous: "Artigo anterior",
+          next: "Proximo artigo"
         }
       },
       connections: {
@@ -1139,6 +1150,32 @@ const messages = {
           country: "País",
           phoneNumber: "Número de WhatsApp",
           submit: "Registar"
+        },
+        proAd: {
+          imageAlt: "Captura de ecrã do Ticketz PRO",
+          title: "Ticketz PRO",
+          features: {
+            officialChannels:
+              "WhatsApp Oficial - Instagram - Messenger e outros",
+            exclusiveFeatures: "Funcionalidades exclusivas",
+            advancedSupport: "Suporte Avançado",
+            easyMigration: "Migração Facilitada"
+          },
+          subscribePrice: "Subscreva por {{monthlyPrice}}/mês",
+          subscribeSubtitle: "diretamente dentro do sistema",
+          ctaUpgrade: "Clique para instruções de Upgrade",
+          ctaVisitSite: "Clique para visitar o site!",
+          instructions: {
+            title: "Instruções de Upgrade",
+            stepIntro:
+              "Se instalou as imagens disponibilizadas pelo projeto num servidor ou VPS utilizando as instruções facilitadas, tudo o que precisa fazer é aceder ao seu servidor e escrever o comando abaixo:",
+            stepInstall:
+              'Em instantes o Ticketz PRO estará instalado com todos os seus dados; agora só precisa de ir ao menu de utilizador, clicar em "Assinatura do Ticketz PRO" e concluir a subscrição.',
+            helpPrefix:
+              "Se a sua instalação for diferente ou acreditar que precisa de ajuda para instalar o Ticketz PRO, ",
+            helpLink: "entre em contacto",
+            helpSuffix: " e nós ajudamos!"
+          }
         },
         support: {
           title: "Apoie o projeto Ticketz Open Source",

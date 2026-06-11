@@ -130,6 +130,17 @@ const messages = {
         ticketCountersLabels: {
           created: "Created",
           closed: "Closed"
+        },
+        blog: {
+          title: "Ticketz Blog",
+          loading: "Loading posts...",
+          error: "Could not load blog posts right now.",
+          empty: "No blog posts found.",
+          showAll: "Show all posts",
+          showLess: "Show less",
+          openPost: "Read post",
+          previous: "Previous post",
+          next: "Next post"
         }
       },
       connections: {
@@ -1263,6 +1274,32 @@ const messages = {
           country: "Country",
           phoneNumber: "Whatsapp Number",
           submit: "Register"
+        },
+        proAd: {
+          imageAlt: "Ticketz PRO screenshot",
+          title: "Ticketz PRO",
+          features: {
+            officialChannels:
+              "Official WhatsApp - Instagram - Messenger and more",
+            exclusiveFeatures: "Exclusive features",
+            advancedSupport: "Advanced support",
+            easyMigration: "Easy migration"
+          },
+          subscribePrice: "Subscribe for {{monthlyPrice}}/month",
+          subscribeSubtitle: "directly inside the system",
+          ctaUpgrade: "Click for upgrade instructions",
+          ctaVisitSite: "Click to visit the website!",
+          instructions: {
+            title: "Upgrade Instructions",
+            stepIntro:
+              "If you installed the images provided by the project on a server or VPS using the simplified instructions, all you need to do is access your server and run the command below:",
+            stepInstall:
+              'In a few moments Ticketz PRO will be installed with all your data; then go to the user menu, click "Ticketz PRO Subscription", and complete your subscription.',
+            helpPrefix:
+              "If your installation is different or you believe you need help installing Ticketz PRO, ",
+            helpLink: "contact us",
+            helpSuffix: " and we will help you!"
+          }
         },
         support: {
           title: "Support Ticketz project",

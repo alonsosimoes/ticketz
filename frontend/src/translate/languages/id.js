@@ -72,6 +72,17 @@ const messages = {
           perDay: {
             title: "Interaksi Hari Ini: "
           }
+        },
+        blog: {
+          title: "Blog Ticketz",
+          loading: "Memuat postingan...",
+          error: "Postingan blog tidak dapat dimuat.",
+          empty: "Tidak ada postingan blog.",
+          showAll: "Tampilkan semua postingan",
+          showLess: "Tampilkan lebih sedikit",
+          openPost: "Baca postingan",
+          previous: "Postingan sebelumnya",
+          next: "Postingan berikutnya"
         }
       },
       connections: {
@@ -1101,6 +1112,32 @@ const messages = {
           country: "Negara",
           phoneNumber: "Nomor Telepon",
           submit: "Daftar"
+        },
+        proAd: {
+          imageAlt: "Tangkapan layar Ticketz PRO",
+          title: "Ticketz PRO",
+          features: {
+            officialChannels:
+              "WhatsApp resmi - Instagram - Messenger dan lainnya",
+            exclusiveFeatures: "Fitur eksklusif",
+            advancedSupport: "Dukungan lanjutan",
+            easyMigration: "Migrasi mudah"
+          },
+          subscribePrice: "Berlangganan seharga {{monthlyPrice}}/bulan",
+          subscribeSubtitle: "langsung di dalam sistem",
+          ctaUpgrade: "Klik untuk instruksi upgrade",
+          ctaVisitSite: "Klik untuk mengunjungi situs",
+          instructions: {
+            title: "Instruksi upgrade",
+            stepIntro:
+              "Jika Anda menginstal image yang disediakan proyek di server atau VPS menggunakan instruksi sederhana, Anda hanya perlu mengakses server dan menjalankan perintah di bawah ini:",
+            stepInstall:
+              'Dalam beberapa saat Ticketz PRO akan terpasang dengan semua data Anda; setelah itu buka menu pengguna, klik "Langganan Ticketz PRO", lalu selesaikan langganan Anda.',
+            helpPrefix:
+              "Jika instalasi Anda berbeda atau Anda merasa perlu bantuan untuk memasang Ticketz PRO, ",
+            helpLink: "hubungi kami",
+            helpSuffix: " dan kami akan membantu!"
+          }
         },
         support: {
           title: "Dukung proyek Ticketz",

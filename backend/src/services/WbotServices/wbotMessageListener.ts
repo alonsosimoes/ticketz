@@ -15,7 +15,9 @@ import {
   WAMessageUpdate,
   WAMessageStubType,
   WAGenericMediaMessage,
-  WALocationMessage
+  WALocationMessage,
+  WAMessageStatus,
+  WAMessageKey
 } from "libzapitu-rf";
 import { Mutex } from "async-mutex";
 import { Op } from "sequelize";
@@ -25,7 +27,7 @@ import { Throttle } from "stream-throttle";
 import { Sequelize } from "sequelize-typescript";
 import Contact from "../../models/Contact";
 import Ticket from "../../models/Ticket";
-import Message from "../../models/Message";
+import Message, { MessageErrorPayload } from "../../models/Message";
 import OldMessage from "../../models/OldMessage";
 
 import { getIO } from "../../libs/socket";
@@ -71,6 +73,7 @@ import GetTicketWbot from "../../helpers/GetTicketWbot";
 import saveMediaToFile from "../../helpers/saveMediaFile";
 import { _t } from "../TranslationServices/i18nService";
 import WhatsappLidMap from "../../models/WhatsappLidMap";
+import normalizePhone from "../../helpers/NormalizePhone";
 
 export interface ImessageUpsert {
   messages: proto.IWebMessageInfo[];
@@ -304,16 +307,23 @@ const getSenderMessage = (
 
 const getContactMessage = async (msg: WAMessage, wbot: Session) => {
   const isGroup = msg.key.remoteJid.includes("g.us");
-  const rawNumber = msg.key.remoteJid.replace(/\D/g, "");
+  const mainJid = isGroup
+    ? msg.key.remoteJid
+    : msg.key?.sender_pn || msg.key?.peer_recipient_pn || msg.key.remoteJid;
+  const numberJid = msg.key?.sender_pn || msg.key?.peer_recipient_pn;
+  const rawNumber = mainJid.replace(/\D/g, "");
   return isGroup
     ? {
         id: getSenderMessage(msg, wbot),
         name: msg.pushName
       }
     : {
-        id: msg.key.remoteJid,
-        lid: msg?.key?.sender_lid,
-        jid: msg?.key?.sender_pn,
+        id: mainJid,
+        lid:
+          msg.key?.sender_lid ||
+          msg.key?.peer_recipient_lid ||
+          (msg.key?.peer_recipient_pn ? msg.key.remoteJid : undefined),
+        jid: numberJid,
         name: msg.key.fromMe ? rawNumber : msg.pushName || msg.verifiedBizName
       };
 };
@@ -2066,8 +2076,12 @@ const handleMessage = async (
   }
 };
 
-const handleMsgAck = async (id: string, whatsappId: number, ack: number) => {
-  if (!ack) return;
+const handleMsgAck = async (
+  id: string,
+  whatsappId: number,
+  update: { status?: number; messageStubParameters?: string[] }
+) => {
+  if (!update) return;
 
   const io = getIO();
 
@@ -2091,9 +2105,28 @@ const handleMsgAck = async (id: string, whatsappId: number, ack: number) => {
       ]
     });
 
-    if (!messageToUpdate || ack <= messageToUpdate.ack) return;
+    if (
+      !messageToUpdate ||
+      (update.status > 0 && update.status <= messageToUpdate.ack)
+    ) {
+      return;
+    }
 
-    await messageToUpdate.update({ ack });
+    let error: MessageErrorPayload;
+
+    if (update.status === WAMessageStatus.ERROR) {
+      logger.error({ id, whatsappId, update }, "Message failed to send.");
+
+      error = {
+        code: `ZAPITU-${update.status}`,
+        message: update.messageStubParameters?.[1]
+          ? update.messageStubParameters[1]
+          : "Message failed to send",
+        rawPayload: update
+      };
+    }
+
+    await messageToUpdate.update({ ack: error ? -1 : update.status, error });
     io.to(messageToUpdate.ticketId.toString()).emit(
       `company-${messageToUpdate.companyId}-appMessage`,
       {
@@ -2112,17 +2145,77 @@ const verifyRecentCampaign = async (
   companyId: number
 ) => {
   if (!message.key.fromMe) {
-    const number = message.key.remoteJid.replace(/\D/g, "");
+    const key = message.key as WAMessageKey;
+    const remoteJid = key.remoteJid || "";
+
+    if (remoteJid.endsWith("@g.us") || remoteJid === "status@broadcast") {
+      return false;
+    }
+
+    const candidates = new Set<string>();
+    const jids = [remoteJid, key.sender_pn].filter(Boolean) as string[];
+    const addPhoneCandidates = (digits: string) => {
+      if (!digits) {
+        return;
+      }
+
+      const normalized = normalizePhone(digits);
+      candidates.add(normalized.phone);
+
+      if (normalized.wphone !== normalized.phone) {
+        candidates.add(normalized.wphone);
+      }
+    };
+
+    jids.forEach(jid => {
+      const value = jid.trim();
+
+      if (!value) {
+        return;
+      }
+
+      if (value.endsWith("@lid")) {
+        candidates.add(value);
+        return;
+      }
+
+      if (value.endsWith("@s.whatsapp.net")) {
+        const numberWithCountry = value.replace(/@s\.whatsapp\.net$/, "");
+        const digits = numberWithCountry.replace(/\D/g, "");
+
+        addPhoneCandidates(digits);
+        return;
+      }
+
+      const digits = value.replace(/\D/g, "");
+
+      addPhoneCandidates(digits);
+    });
+
+    if (!candidates.size) {
+      return false;
+    }
+
     const campaigns = await Campaign.findAll({
       where: { companyId, status: "EM_ANDAMENTO", confirmation: true }
     });
-    if (campaigns) {
+    if (campaigns.length) {
       const ids = campaigns.map(c => c.id);
       const campaignShipping = await CampaignShipping.findOne({
-        where: { campaignId: { [Op.in]: ids }, number, confirmation: null }
+        where: {
+          campaignId: { [Op.in]: ids },
+          number: { [Op.in]: [...candidates] },
+          confirmationRequestedAt: {
+            [Op.ne]: null
+          }
+        },
+        order: [
+          ["createdAt", "DESC"],
+          ["id", "DESC"]
+        ]
       });
 
-      if (campaignShipping) {
+      if (campaignShipping && !campaignShipping.confirmation) {
         await campaignShipping.update({
           confirmedAt: moment(),
           confirmation: true
@@ -2204,7 +2297,7 @@ const wbotMessageListener = async (
       if (messageReceipt.length === 0) return;
       messageReceipt.forEach(async (receipt: any) => {
         await ackMutex.runExclusive(async () => {
-          handleMsgAck(receipt.key.id, wbot.id, 2);
+          handleMsgAck(receipt.key.id, wbot.id, { status: 2 });
         });
       });
     });
@@ -2216,7 +2309,7 @@ const wbotMessageListener = async (
         (wbot as WASocket)!.readMessages([message.key]);
 
         await ackMutex.runExclusive(async () => {
-          handleMsgAck(message.key.id, wbot.id, message.update.status);
+          handleMsgAck(message.key.id, wbot.id, message.update);
         });
       });
     });

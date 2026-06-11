@@ -25,6 +25,7 @@ import {
 import {
   AccessTime,
   Block,
+  ErrorOutline,
   Warning,
   Done,
   DoneAll,
@@ -618,6 +619,22 @@ const useStyles = makeStyles(theme => ({
     width: "100%",
     textTransform: "none",
     margin: "auto"
+  },
+  messageErrorBand: {
+    marginTop: 6,
+    marginLeft: -5,
+    marginRight: -5,
+    overflow: "hidden",
+    backgroundColor: "#c62828",
+    color: "#ffeb3b",
+    textAlign: "center",
+    padding: "4px 6px",
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+    lineHeight: 1.3,
+    fontWeight: 700
   }
 }));
 
@@ -679,6 +696,24 @@ const reducer = (state, action) => {
     return [...state];
   }
 
+  if (action.type === "MERGE_MESSAGES") {
+    const messages = action.payload;
+
+    messages.forEach(message => {
+      const messageIndex = state.findIndex(m => m.id === message.id);
+      if (messageIndex !== -1) {
+        state[messageIndex] = message;
+      } else {
+        const idx = state.findIndex(
+          m => new Date(m.createdAt) > new Date(message.createdAt)
+        );
+        state.splice(idx < 0 ? state.length : idx, 0, message);
+      }
+    });
+
+    return [...state];
+  }
+
   if (action.type === "RESET") {
     return [];
   }
@@ -688,6 +723,10 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
   const classes = useStyles();
 
   const [messagesList, dispatch] = useReducer(reducer, []);
+  const messagesListRef = useRef(messagesList);
+  useEffect(() => {
+    messagesListRef.current = messagesList;
+  }, [messagesList]);
   const [nextId, setNextId] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -744,6 +783,13 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
     };
   }
 
+  function refreshMessagesList() {
+    dispatch({ type: "RESET" });
+    setNextId(null);
+    setHasMore(false);
+    loadData();
+  }
+
   useEffect(async () => {
     dispatch({ type: "RESET" });
     setContactPresence("available");
@@ -798,6 +844,68 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
     };
 
     socket.on(`company-${companyId}-appMessage`, onAppMessage);
+    socket.on("wsRefreshRequired", refreshRequired => {
+      if (!refreshRequired || !currentTicketId.current) {
+        return;
+      }
+
+      loadPageMutex.runExclusive(async () => {
+        const currentList = messagesListRef.current;
+        if (currentList.length > 0) {
+          const maxUpdatedAt = currentList.reduce(
+            (max, msg) => (msg.updatedAt > max ? msg.updatedAt : max),
+            currentList[0].updatedAt
+          );
+
+          try {
+            const { data } = await api.get(
+              "/messages/" + currentTicketId.current,
+              {
+                params: { minUpdatedAt: maxUpdatedAt }
+              }
+            );
+            const currentIds = new Set(currentList.map(m => m.id));
+            const newMessages = data.messages.filter(
+              m => !currentIds.has(m.id)
+            );
+            let isAtBottom = false;
+            let newestMessage = null;
+
+            if (newMessages.length > 0) {
+              const { scrollTop, clientHeight, scrollHeight } =
+                scrollRef.current;
+              isAtBottom =
+                scrollTop + clientHeight >= scrollHeight - clientHeight / 4;
+              newestMessage = newMessages.reduce((latest, msg) =>
+                new Date(msg.createdAt) > new Date(latest.createdAt)
+                  ? msg
+                  : latest
+              );
+              newestMessage.bottomStick =
+                (!isAtBottom && !newestMessage.fromMe) || undefined;
+            }
+
+            dispatch({ type: "MERGE_MESSAGES", payload: data.messages });
+
+            if (newMessages.length > 0) {
+              if (
+                (isAtBottom || newestMessage.fromMe) &&
+                newestMessage.mediaType !== "reactionMessage"
+              ) {
+                scrollToBottom();
+              }
+              if (newestMessage.bottomStick) {
+                scrollStickedToBottom();
+              }
+            }
+          } catch (err) {
+            toastError(err);
+          }
+        } else {
+          refreshMessagesList();
+        }
+      });
+    });
 
     socket.on(`company-${companyId}-presence`, data => {
       const { scrollTop, clientHeight, scrollHeight } = scrollRef.current;
@@ -1110,6 +1218,9 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
   };
 
   const renderMessageAck = message => {
+    if (message.ack === -1) {
+      return <ErrorOutline fontSize="small" className={classes.ackIcons} />;
+    }
     if (message.ack === 0) {
       return <Warning fontSize="small" className={classes.ackIcons} />;
     }
@@ -1259,6 +1370,39 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
     );
   };
 
+  const getMessageErrorData = message => {
+    if (!message?.error) {
+      return null;
+    }
+
+    if (typeof message.error === "string") {
+      const text = message.error.trim();
+      if (!text) {
+        return null;
+      }
+      return {
+        code: "ERROR",
+        message: text,
+        title: `[ERROR] ${text}`
+      };
+    }
+
+    const errorCode =
+      typeof message.error.code === "string" && message.error.code.trim()
+        ? message.error.code.trim()
+        : "ERROR";
+    const errorMessage =
+      typeof message.error.message === "string" && message.error.message.trim()
+        ? message.error.message.trim()
+        : "Unknown error";
+
+    return {
+      code: errorCode,
+      message: errorMessage,
+      title: `[${errorCode}] ${errorMessage}`
+    };
+  };
+
   const renderLinkPreview = message => {
     const data = JSON.parse(message.dataJson);
 
@@ -1278,6 +1422,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
         href={canonicalUrl}
         className={classes.linkPreviewAnchor}
         target="_blank"
+        rel="noreferrer"
       >
         <div
           className={clsx(classes.quotedContainerLeft, {
@@ -1352,6 +1497,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
         href={url}
         target="_blank"
         style={{ textDecoration: "none", color: "inherit" }}
+        rel="noreferrer"
       >
         {displayText}
       </a>
@@ -1656,6 +1802,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
 
       const data = JSON.parse(message.dataJson);
       const dataContext = getDataContextInfo(data);
+      const messageError = getMessageErrorData(message);
       const isSticker = data?.message && "stickerMessage" in data.message;
       if (!message.fromMe) {
         const messageFragment = (
@@ -1853,6 +2000,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
                       [classes.timestampStickerRight]: isSticker
                     })
                   ]}
+                  style={{ bottom: messageError ? 24 : 0 }}
                 >
                   {message.isEdited && (
                     <span> {i18n.t("message.edited")} </span>
@@ -1863,6 +2011,14 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
               </div>
               {message.mediaUrl && checkMessageMedia(message, data, isSticker)}
               {renderReplies(message.replies)}
+              {messageError && (
+                <div
+                  className={classes.messageErrorBand}
+                  title={messageError.title}
+                >
+                  {messageError.code} - {messageError.message}
+                </div>
+              )}
             </div>
           </React.Fragment>
         );

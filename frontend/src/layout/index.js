@@ -12,6 +12,8 @@ import {
   MenuItem,
   IconButton,
   Menu,
+  Badge,
+  Tooltip,
   useTheme,
   useMediaQuery
 } from "@material-ui/core";
@@ -19,6 +21,7 @@ import {
 import MenuIcon from "@material-ui/icons/Menu";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import AccountCircle from "@material-ui/icons/AccountCircle";
+import SettingsEthernetIcon from "@material-ui/icons/SettingsEthernet";
 import CachedIcon from "@material-ui/icons/Cached";
 
 import MainListItems from "./MainListItems";
@@ -194,7 +197,8 @@ const useStyles = makeStyles(theme => ({
     }
   },
   menuButton: {
-    marginRight: 36
+    marginRight: 36,
+    color: theme.palette.primary.contrastText
   },
   menuButtonHidden: {
     display: "none"
@@ -203,6 +207,25 @@ const useStyles = makeStyles(theme => ({
     flexGrow: 1,
     fontSize: 14,
     color: "white"
+  },
+  wsConnectionAlertButton: {
+    marginRight: theme.spacing(1.5),
+    color: theme.palette.primary.contrastText,
+    padding: theme.spacing(0.5)
+  },
+  wsConnectionAlertIcon: {
+    fontSize: 20
+  },
+  wsConnectionBadge: {
+    "& .MuiBadge-badge": {
+      minWidth: 10,
+      width: 10,
+      height: 10,
+      borderRadius: "50%",
+      backgroundColor: "#ff4d4f",
+      border: "none",
+      boxShadow: "none"
+    }
   },
   userMenuInfoContainer: {
     padding: theme.spacing(1.5, 2),
@@ -320,6 +343,7 @@ const LoggedInLayout = ({ children, themeToggle }) => {
   const { dateToClient } = useDate();
 
   const socketManager = useContext(SocketContext);
+  const [wsConnectionIssue, setWsConnectionIssue] = useState(false);
 
   const [newTicketContact, setNewTicketContact] = useState(null);
 
@@ -413,6 +437,14 @@ const LoggedInLayout = ({ children, themeToggle }) => {
 
     persistDrawerOpenState(drawerOpen);
   }, [drawerOpen, greaterThenSm]);
+
+  useEffect(() => {
+    if (!socketManager?.subscribeWsConnectionIssue) {
+      return undefined;
+    }
+
+    return socketManager.subscribeWsConnectionIssue(setWsConnectionIssue);
+  }, [socketManager]);
 
   useEffect(() => {
     const companyId = localStorage.getItem("companyId");
@@ -596,6 +628,27 @@ const LoggedInLayout = ({ children, themeToggle }) => {
             noWrap
             className={classes.title}
           />
+
+          {wsConnectionIssue && (
+            <Tooltip title={i18n.t("common.connection")} arrow>
+              <span
+                aria-label={i18n.t("common.connection")}
+                className={classes.wsConnectionAlertButton}
+              >
+                <Badge
+                  variant="dot"
+                  overlap="circular"
+                  color="secondary"
+                  anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                  className={classes.wsConnectionBadge}
+                >
+                  <SettingsEthernetIcon
+                    className={classes.wsConnectionAlertIcon}
+                  />
+                </Badge>
+              </span>
+            </Tooltip>
+          )}
 
           {canAccessBackendlogs && <Backendlogs />}
 

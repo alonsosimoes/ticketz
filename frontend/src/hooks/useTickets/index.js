@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import toastError from "../../errors/toastError";
 
 import api from "../../services/api";
@@ -23,6 +23,7 @@ const useTickets = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [tickets, setTickets] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -75,12 +76,60 @@ const useTickets = ({
     withUnreadMessages,
     isSearch,
     notClosed,
-    all
+    all,
+    refreshTrigger
   ]);
+
+  const refetch = useCallback(() => {
+    setRefreshTrigger(prevState => prevState + 1);
+  }, []);
+
+  const fetchSince = useCallback(
+    async minUpdatedAt => {
+      const { data } = await api.get("/tickets", {
+        params: {
+          isSearch,
+          searchParam,
+          contactId,
+          tags,
+          users,
+          status,
+          groups,
+          date,
+          updatedAt,
+          showAll,
+          queueIds,
+          withUnreadMessages,
+          notClosed,
+          all,
+          minUpdatedAt
+        }
+      });
+      return data.tickets;
+    },
+    [
+      isSearch,
+      searchParam,
+      contactId,
+      tags,
+      users,
+      status,
+      groups,
+      date,
+      updatedAt,
+      showAll,
+      queueIds,
+      withUnreadMessages,
+      notClosed,
+      all
+    ]
+  );
 
   return {
     tickets,
-    loading
+    loading,
+    refetch,
+    fetchSince
   };
 };
 

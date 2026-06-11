@@ -3,14 +3,15 @@ import * as Sentry from "@sentry/node";
 
 import { Mutex } from "async-mutex";
 import Contact from "../../models/Contact";
-import Setting from "../../models/Setting";
 import Ticket from "../../models/Ticket";
 import Whatsapp from "../../models/Whatsapp";
 import { logger } from "../../utils/logger";
 import createOrUpdateBaileysService from "../BaileysServices/CreateOrUpdateBaileysService";
 import CreateMessageService from "../MessageServices/CreateMessageService";
+import { _t } from "../TranslationServices/i18nService";
 import { Session } from "../../libs/wbot";
 import { cacheLayer } from "../../libs/cache";
+import { GetCompanySetting } from "../../helpers/CheckSettings";
 
 const contactMutex = new Mutex();
 
@@ -21,23 +22,34 @@ const wbotMonitor = async (
 ): Promise<void> => {
   try {
     wbot.ws.on("CB:call", async (node: BinaryNode) => {
-      const content = node.content[0] as any;
+      const content = node.content[0] as BinaryNode;
 
       if (content.tag === "terminate") {
-        const sendMsgCall = await Setting.findOne({
-          where: { key: "call", companyId }
-        });
+        const sendMsgCall = await GetCompanySetting(
+          companyId,
+          "call",
+          "disabled"
+        );
 
-        if (sendMsgCall.value === "disabled") {
-          await wbot.sendMessage(node.attrs.from, {
-            text: "*Mensagem Automática:*\n\nAs chamadas de voz e vídeo estão desabilitas para esse WhatsApp, favor enviar uma mensagem de texto. Obrigado"
-          });
-
+        if (sendMsgCall === "disabled") {
           const number = node.attrs.from.replace(/\D/g, "");
 
           const contact = await Contact.findOne({
             where: { companyId, number }
           });
+
+          const translationSource = contact || whatsapp;
+          const autoMessage = _t("*Automated message*", translationSource);
+          const callDisabledMessage = _t(
+            "Voice and video calls are disabled for this WhatsApp account, please send a text message. Thank you",
+            translationSource
+          );
+
+          await wbot.sendMessage(node.attrs.from, {
+            text: `${autoMessage}:\n\n${callDisabledMessage}`
+          });
+
+          if (!contact) return;
 
           const ticket = await Ticket.findOne({
             where: {
@@ -50,11 +62,7 @@ const wbotMonitor = async (
           // se não existir o ticket não faz nada.
           if (!ticket) return;
 
-          const date = new Date();
-          const hours = date.getHours();
-          const minutes = date.getMinutes();
-
-          const body = `Chamada de voz/vídeo perdida às ${hours}:${minutes}`;
+          const body = _t("Missed voice/video call", translationSource);
           const messageData = {
             id: content.attrs["call-id"],
             ticketId: ticket.id,
