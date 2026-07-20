@@ -125,6 +125,11 @@ const messages = {
             content:
               "Pastikan ponsel Anda terhubung ke internet dan WhatsApp terbuka, atau klik 'Putuskan' untuk mendapatkan Kode QR baru."
           },
+          passkey: {
+            title: "Passkey authentication required",
+            content:
+              "Click the passkey button and use the browser extension to capture the authenticated WhatsApp Web session."
+          },
           refresh: "Muat ulang",
           disconnect: "Putuskan",
           scan: "Pindai",
@@ -160,7 +165,42 @@ const messages = {
         success: "WhatsApp berhasil disimpan."
       },
       qrCode: {
-        message: "Pindai Kode QR untuk memulai sesi"
+        message: "Pindai Kode QR untuk memulai sesi",
+        extensionHint: "Autentikasi melalui WhatsApp Web",
+        startCapture: "Tangkap sesi WhatsApp Web",
+        installExtension: "Pasang Ekstensi Tangkap"
+      },
+      passkeyModal: {
+        title: "Ekstensi Tangkap WhatsApp Web",
+        instructions:
+          "Use the browser extension to capture the authenticated WhatsApp Web session and send it to the server.",
+        connectorNotFound:
+          "Extension not detected. Install the passkey capture extension and reload the page.",
+        connectorReady:
+          "Ekstensi terdeteksi. Klik di bawah untuk mengautentikasi melalui WhatsApp Web.",
+        startCapture: "Start Capture",
+        waitingForCapture: "Waiting for WhatsApp Web session capture…",
+        existingSession: "WhatsApp Web already has a session for {{number}}.",
+        captureExisting: "Capture this session",
+        clearAndContinue: "Clear local session and continue",
+        importSent: "Session captured and sent successfully.",
+        importError: "Capture failed: {{reason}}.",
+        missingToken: "Capture token is missing. Please reload the page.",
+        downloadExtension: "Unduh ekstensi penangkapan",
+        installInstructions: "Cara memasang",
+        hideInstructions: "Sembunyikan instruksi",
+        instructionsIntro:
+          "Ikuti langkah-langkah di bawah ini untuk memasang ekstensi:",
+        installStep1: "Unduh file ZIP ekstensi.",
+        installStep2: "Ekstrak file ZIP ke folder di komputer Anda.",
+        installStep3: "Buka Google Chrome dan akses chrome://extensions/.",
+        installStep4:
+          "Aktifkan Mode pengembang dengan tombol di sudut kanan atas.",
+        installStep5: 'Klik "Muat yang tidak dipaketkan".',
+        installStep6: "Pilih folder hasil ekstraksi yang berisi file ekstensi.",
+        installStep7: "Ekstensi telah terpasang dan siap digunakan.",
+        installStep8:
+          "Segarkan halaman ini dengan F5 dan coba hubungkan kembali."
       },
       contacts: {
         title: "Kontak",
@@ -792,7 +832,17 @@ const messages = {
         backgroundContent: "Konten latar login",
         backgroundContentHint:
           "Mendukung gambar, file SVG, dan video MP4 untuk latar layar login.",
-        noFileSelected: "Belum ada file yang dipilih."
+        noFileSelected: "Belum ada file yang dipilih.",
+        buildExtension: "Bangun ekstensi WA Session Capture",
+        buildingExtension: "Membangun ekstensi…",
+        downloadExtension: "Unduh ekstensi",
+        extensionHint:
+          "Membangun ekstensi Chrome whitelabel. File ZIP yang diunduh sudah berisi file ekstensi: ekstrak dan muat folder hasil ekstraksi sebagai ekstensi yang tidak dipaketkan.",
+        extensionBuildStarted:
+          "Pembangunan ekstensi dimulai. Anda akan diberitahu saat sudah siap.",
+        extensionBuildFailed: "Tidak dapat memulai pembangunan ekstensi.",
+        extensionBuilt: "Ekstensi berhasil dibangun.",
+        extensionBuildUnknownError: "Kesalahan build tidak diketahui."
       },
       settings: {
         group: {

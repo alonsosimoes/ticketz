@@ -7,8 +7,10 @@ import {
   DialogContent,
   Paper,
   Typography,
+  Button,
   makeStyles
 } from "@material-ui/core";
+import { ExtensionOutlined } from "@material-ui/icons";
 import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
 import { SocketContext } from "../../context/Socket/SocketContext";
@@ -17,10 +19,28 @@ const useStyles = makeStyles(theme => ({
   qrcodeFrame: {
     padding: "10px",
     backgroundColor: "#fff"
+  },
+  content: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    textAlign: "center",
+    padding: theme.spacing(2),
+    gap: theme.spacing(2)
+  },
+  extensionAction: {
+    marginTop: theme.spacing(1)
   }
 }));
 
-const QrcodeModal = ({ open, onClose, whatsAppId }) => {
+const QrcodeModal = ({
+  open,
+  onClose,
+  whatsAppId,
+  onOpenPasskeyModal,
+  connectorReady = false
+}) => {
+  const [requestingCapture, setRequestingCapture] = useState(false);
   const classes = useStyles();
   const [qrCode, setQrCode] = useState("");
 
@@ -48,6 +68,10 @@ const QrcodeModal = ({ open, onClose, whatsAppId }) => {
     const onCompanyWhatsappSession = data => {
       if (data.action === "update" && data.session.id === whatsAppId) {
         setQrCode(data.session.qrcode);
+
+        if (data.session.status === "passkey_required" && onOpenPasskeyModal) {
+          onOpenPasskeyModal();
+        }
       }
 
       if (data.action === "update" && data.session.qrcode === "") {
@@ -65,14 +89,53 @@ const QrcodeModal = ({ open, onClose, whatsAppId }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" scroll="paper">
       <DialogContent>
-        <Paper elevation={0}>
+        <Paper elevation={0} className={classes.content}>
           <Typography color="primary" gutterBottom>
             {i18n.t("qrCode.message")}
           </Typography>
           {qrCode ? (
             <QRCode className={classes.qrcodeFrame} value={qrCode} size={256} />
           ) : (
-            <span>Waiting for QR Code</span>
+            <Typography component="span" variant="body1">
+              Waiting for QR Code
+            </Typography>
+          )}
+          {connectorReady && (
+            <Button
+              className={classes.extensionAction}
+              variant="contained"
+              color="primary"
+              size="small"
+              disabled={requestingCapture}
+              startIcon={<ExtensionOutlined />}
+              onClick={async () => {
+                if (!whatsAppId) return;
+                setRequestingCapture(true);
+                try {
+                  await api.post(
+                    `/whatsappsession/${whatsAppId}/capture-token`
+                  );
+                } catch (err) {
+                  toastError(err);
+                } finally {
+                  setRequestingCapture(false);
+                }
+              }}
+            >
+              {i18n.t("qrCode.startCapture")}
+            </Button>
+          )}
+          {!connectorReady && onOpenPasskeyModal && (
+            <Button
+              className={classes.extensionAction}
+              variant="outlined"
+              color="primary"
+              size="small"
+              startIcon={<ExtensionOutlined />}
+              onClick={onOpenPasskeyModal}
+            >
+              {i18n.t("qrCode.installExtension")}
+            </Button>
           )}
         </Paper>
       </DialogContent>

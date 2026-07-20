@@ -124,7 +124,13 @@ const messages = {
             title: "Connexion avec le téléphone perdue",
             content:
               "Assurez-vous que votre téléphone est connecté à Internet et que WhatsApp est ouvert, ou cliquez sur le bouton 'Déconnecter' pour obtenir un nouveau QR Code"
-          }
+          },
+          passkey: {
+            title: "Passkey authentication required",
+            content:
+              "Click the passkey button and use the browser extension to capture the authenticated WhatsApp Web session."
+          },
+          resetPasskey: "Réinitialiser la session passkey"
         },
         table: {
           name: "Nom",
@@ -155,7 +161,44 @@ const messages = {
         success: "WhatsApp enregistré avec succès."
       },
       qrCode: {
-        message: "Scannez le QR Code pour démarrer la session"
+        message: "Scannez le QR Code pour démarrer la session",
+        extensionHint: "S'authentifier via WhatsApp Web",
+        startCapture: "Capturer la session WhatsApp Web",
+        installExtension: "Installer l'extension de capture"
+      },
+      passkeyModal: {
+        title: "Extension de capture WhatsApp Web",
+        instructions:
+          "Use the browser extension to capture the authenticated WhatsApp Web session and send it to the server.",
+        connectorNotFound:
+          "Extension not detected. Install the passkey capture extension and reload the page.",
+        connectorReady:
+          "Extension détectée. Cliquez ci-dessous pour vous authentifier via WhatsApp Web.",
+        startCapture: "Start Capture",
+        waitingForCapture: "Waiting for WhatsApp Web session capture…",
+        existingSession: "WhatsApp Web already has a session for {{number}}.",
+        captureExisting: "Capture this session",
+        clearAndContinue: "Clear local session and continue",
+        importSent: "Session captured and sent successfully.",
+        importError: "Capture failed: {{reason}}.",
+        missingToken: "Capture token is missing. Please reload the page.",
+        downloadExtension: "Télécharger l'extension de capture",
+        installInstructions: "Comment installer",
+        hideInstructions: "Masquer les instructions",
+        instructionsIntro:
+          "Suivez les étapes ci-dessous pour installer l'extension :",
+        installStep1: "Téléchargez le fichier ZIP de l'extension.",
+        installStep2:
+          "Extrayez le fichier ZIP dans un dossier de votre ordinateur.",
+        installStep3: "Ouvrez Google Chrome et allez à chrome://extensions/.",
+        installStep4:
+          "Activez le Mode développeur avec le bouton en haut à droite.",
+        installStep5: 'Cliquez sur "Charger l\'extension non empaquetée".',
+        installStep6:
+          "Sélectionnez le dossier extrait contenant les fichiers de l'extension.",
+        installStep7: "L'extension est installée et prête à l'emploi.",
+        installStep8:
+          "Actualisez cette page avec F5 et essayez de vous connecter à nouveau."
       },
       contacts: {
         title: "Contacts",
@@ -775,7 +818,18 @@ const messages = {
         backgroundContent: "Contenu d'arrière-plan de connexion",
         backgroundContentHint:
           "Accepte les images, fichiers SVG et vidéos MP4 pour l'arrière-plan de l'écran de connexion.",
-        noFileSelected: "Aucun fichier sélectionné pour le moment."
+        noFileSelected: "Aucun fichier sélectionné pour le moment.",
+        buildExtension: "Construire l'extension WA Session Capture",
+        buildingExtension: "Construction de l'extension…",
+        downloadExtension: "Télécharger l'extension",
+        extensionHint:
+          "Construit une extension Chrome en marque blanche. Le ZIP téléchargé contient déjà les fichiers de l'extension : décompressez-le et chargez le dossier extrait comme extension non empaquetée.",
+        extensionBuildStarted:
+          "Construction de l'extension démarrée. Vous serez notifié lorsqu'elle sera prête.",
+        extensionBuildFailed:
+          "Impossible de démarrer la construction de l'extension.",
+        extensionBuilt: "Extension construite avec succès.",
+        extensionBuildUnknownError: "Erreur de construction inconnue."
       },
       settings: {
         group: {

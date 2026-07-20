@@ -183,11 +183,17 @@ const messages = {
             content:
               "Certifique-se de que seu celular esteja conectado à internet e o WhatsApp esteja aberto, ou clique no botão 'Desconectar' para obter um novo QR Code"
           },
+          passkey: {
+            title: "Autenticação por passkey necessária",
+            content:
+              "Clique no botão de passkey e use a extensão do navegador para capturar a sessão autenticada do WhatsApp Web."
+          },
           refresh: "Refazer conexão",
           disconnect: "Desconectar",
           scan: "Ler QR Code",
           newQr: "Gerar novo QR Code",
-          retry: "Tentar novamente"
+          retry: "Tentar novamente",
+          resetPasskey: "Reiniciar sessão passkey"
         },
         table: {
           name: "Nome",
@@ -218,7 +224,41 @@ const messages = {
         success: "WhatsApp salvo com sucesso."
       },
       qrCode: {
-        message: "Leia o QrCode para iniciar a sessão"
+        message: "Leia o QrCode para iniciar a sessão",
+        extensionHint: "Autenticar pelo WhatsApp Web",
+        startCapture: "Capturar sessão do WhatsApp Web",
+        installExtension: "Instalar Extensão de Captura"
+      },
+      passkeyModal: {
+        title: "Extensão de Captura do WhatsApp Web",
+        instructions:
+          "Use a extensão do navegador para capturar a sessão autenticada do WhatsApp Web e enviá-la ao servidor.",
+        connectorNotFound:
+          "Extensão não detectada. Instale a extensão de captura passkey e recarregue a página.",
+        connectorReady:
+          "Extensão detectada. Clique abaixo para autenticar pelo WhatsApp Web.",
+        startCapture: "Iniciar Captura",
+        waitingForCapture: "Aguardando a captura da sessão do WhatsApp Web…",
+        existingSession: "O WhatsApp Web já possui uma sessão para {{number}}.",
+        captureExisting: "Capturar esta sessão",
+        clearAndContinue: "Limpar sessão local e continuar",
+        importSent: "Sessão capturada e enviada com sucesso.",
+        importError: "Falha na captura: {{reason}}.",
+        missingToken: "Token de captura ausente. Recarregue a página.",
+        downloadExtension: "Baixar extensão de captura",
+        installInstructions: "Como instalar",
+        hideInstructions: "Ocultar instruções",
+        instructionsIntro: "Siga os passos abaixo para instalar a extensão:",
+        installStep1: "Baixe o arquivo ZIP da extensão.",
+        installStep2: "Extraia o arquivo ZIP para uma pasta no seu computador.",
+        installStep3: "Abra o Google Chrome e acesse chrome://extensions/.",
+        installStep4:
+          "Ative o Modo de desenvolvedor usando a chave no canto superior direito.",
+        installStep5: 'Clique em "Carregar sem compactação".',
+        installStep6: "Selecione a pasta da extensão extraída.",
+        installStep7: "A extensão está instalada e pronta para uso.",
+        installStep8:
+          "Recarregue esta página com F5 e tente conectar novamente."
       },
       contacts: {
         title: "Contatos",
@@ -846,7 +886,18 @@ const messages = {
         backgroundContent: "Conteúdo de fundo do login",
         backgroundContentHint:
           "Aceita imagens, arquivos SVG e vídeos MP4 para o fundo da tela de login.",
-        noFileSelected: "Nenhum arquivo selecionado ainda."
+        noFileSelected: "Nenhum arquivo selecionado ainda.",
+        buildExtension: "Construir extensão WA Session Capture",
+        buildingExtension: "Construindo extensão…",
+        downloadExtension: "Baixar extensão",
+        extensionHint:
+          "Constrói uma extensão Chrome personalizada. O ZIP baixado já contém os arquivos da extensão: extraia e carregue a pasta extraída como extensão descompactada.",
+        extensionBuildStarted:
+          "Construção da extensão iniciada. Você será notificado quando estiver pronta.",
+        extensionBuildFailed:
+          "Não foi possível iniciar a construção da extensão.",
+        extensionBuilt: "Extensão construída com sucesso.",
+        extensionBuildUnknownError: "Erro desconhecido na construção."
       },
       settings: {
         group: {
