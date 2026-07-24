@@ -22,6 +22,7 @@ import GetWhatsappWbot from "../helpers/GetWhatsappWbot";
 import OutOfTicketMessage from "../models/OutOfTicketMessages";
 import { Session } from "../libs/wbot";
 import { getJidOf } from "../services/WbotServices/getJidOf";
+import { clearRepeatableJobsFromQueues } from "./repeatableJobs";
 
 const connection = process.env.REDIS_URI || "";
 export const campaignQueue = new Queue("CampaignQueue", connection);
@@ -67,7 +68,8 @@ async function handleVerifyCampaigns() {
           delay
         },
         {
-          removeOnComplete: true
+          removeOnComplete: true,
+          removeOnFail: 100
         }
       );
     } catch (err) {
@@ -306,7 +308,9 @@ async function prepareContact(
         contactListItemId: contact.id
       },
       {
-        delay
+        delay,
+        removeOnComplete: true,
+        removeOnFail: 100
       }
     );
 
@@ -451,6 +455,10 @@ async function handleDispatchCampaign(job) {
 }
 
 export async function startCampaignQueues() {
+  await clearRepeatableJobsFromQueues([
+    { name: "CampaignQueue", queue: campaignQueue }
+  ]);
+
   campaignQueue.process("VerifyCampaignsDatabase", handleVerifyCampaigns);
   campaignQueue.process("ProcessCampaign", handleProcessCampaign);
   campaignQueue.process("DispatchCampaign", handleDispatchCampaign);
@@ -461,7 +469,8 @@ export async function startCampaignQueues() {
     {},
     {
       repeat: { cron: "*/20 * * * * *" },
-      removeOnComplete: true
+      removeOnComplete: true,
+      removeOnFail: 100
     }
   );
 }
