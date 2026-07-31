@@ -198,6 +198,10 @@ const Connections = () => {
     [setQrModalOpen, setPasskeyInitialToken, setPasskeyModalOpen]
   );
 
+  const handleConnectorReady = useCallback(() => {
+    setConnectorReady(true);
+  }, [setConnectorReady]);
+
   const handleOpenInstallInstructionsFromQr = useCallback(() => {
     setQrModalOpen(false);
     setPasskeyInitialToken("");
@@ -436,7 +440,7 @@ const Connections = () => {
         open={passkeyModalOpen}
         onClose={handleClosePasskeyModal}
         captureToken={passkeyInitialToken}
-        onConnectorReady={() => setConnectorReady(true)}
+        onConnectorReady={handleConnectorReady}
         whatsAppId={
           !whatsAppModalOpen && !privacyModalOpen && selectedWhatsApp?.id
         }

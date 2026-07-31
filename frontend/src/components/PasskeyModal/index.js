@@ -75,6 +75,8 @@ const PasskeyModal = ({
   const { getPublicSetting } = useSettings();
 
   useEffect(() => {
+    if (!open) return;
+
     const loadDownloadUrl = async () => {
       try {
         const url = await getPublicSetting("extensionDownloadUrl");
@@ -85,7 +87,7 @@ const PasskeyModal = ({
     };
 
     loadDownloadUrl();
-  }, [getPublicSetting]);
+  }, [open, getPublicSetting]);
 
   useEffect(() => {
     if (whatsApp?.qrcode) {
