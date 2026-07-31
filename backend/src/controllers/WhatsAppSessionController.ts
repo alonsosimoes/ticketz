@@ -9,6 +9,7 @@ import ShowWhatsAppService from "../services/WhatsappService/ShowWhatsAppService
 import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
 import UpdateWhatsAppService from "../services/WhatsappService/UpdateWhatsAppService";
 import ImportWhatsAppSessionService from "../services/WbotServices/ImportWhatsAppSessionService";
+import DeleteBaileysService from "../services/BaileysServices/DeleteBaileysService";
 import { startBuildCaptureExtension } from "../services/WbotServices/BuildCaptureExtensionService";
 import AppError from "../errors/AppError";
 import { getIO } from "../libs/socket";
@@ -66,9 +67,43 @@ const remove = async (req: Request, res: Response): Promise<Response> => {
   }
 
   if (whatsapp.channel === "whatsapp") {
-    const wbot = getWbot(whatsapp.id);
-    wbot.logout();
-    wbot.ws.close();
+    try {
+      const wbot = getWbot(whatsapp.id);
+
+      // The connection.update handler treats any close that is not
+      // DisconnectReason.loggedOut as a dropped connection and schedules a
+      // reconnect. Dropping the listener first keeps it from reviving the
+      // session we are about to log out.
+      wbot.ev.removeAllListeners("connection.update");
+
+      // Must be awaited: logout() sends a stanza over the websocket, and
+      // closing the socket before it is flushed makes WhatsApp keep the
+      // session alive.
+      await wbot.logout();
+    } catch (err) {
+      logger.warn(
+        { err, whatsappId: whatsapp.id },
+        "Could not log out session cleanly, disconnecting anyway"
+      );
+    }
+
+    await removeWbot(whatsapp.id, false);
+    await BaileysKeys.destroy({ where: { whatsappId: whatsapp.id } });
+    await whatsapp.update({
+      status: "DISCONNECTED",
+      session: "",
+      qrcode: ""
+    });
+    await DeleteBaileysService(whatsapp.id);
+
+    const io = getIO();
+    io.to(`company-${whatsapp.companyId}-admin`).emit(
+      `company-${whatsapp.companyId}-whatsappSession`,
+      {
+        action: "update",
+        session: whatsapp
+      }
+    );
   }
 
   if (whatsapp.channel === "facebook" || whatsapp.channel === "instagram") {
